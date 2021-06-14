@@ -1,0 +1,7 @@
+#!/bin/bash
+
+cd "$(dirname "$0")/.."
+
+docker build -t k3main .
+
+docker run -it --hostname raspberrypi --rm k3main setup
