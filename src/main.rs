@@ -1,4 +1,4 @@
-use std::process::exit;
+use std::{net::IpAddr, process::exit};
 
 use k3main::k3main::{setup::Device, K3main};
 use log::{error, LevelFilter};
@@ -25,6 +25,12 @@ enum Command {
     Init,
     Flash,
     Setup {
+        #[structopt(
+            long = "ip",
+            help = "The ip address of the machine you want to setup will connect using known default ssh credentials."
+        )]
+        ip: IpAddr,
+
         #[structopt(long = "device", possible_values(&["raspberrypi", "odroidmc1", "odroidhc4"]))]
         device: Option<Device>,
     },
@@ -45,8 +51,8 @@ fn main() {
     match opt.command {
         Command::Init => {}
         Command::Flash => {}
-        Command::Setup { device } => {
-            if let Err(e) = k3main.setup(device) {
+        Command::Setup { ip, device } => {
+            if let Err(e) = k3main.setup(ip, device) {
                 error!("Setup failed: {}", e);
                 exit(1)
             }

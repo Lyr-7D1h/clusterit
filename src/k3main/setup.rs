@@ -1,6 +1,7 @@
 use std::{
     fs::read_to_string,
     io,
+    net::IpAddr,
     process::{Command, Output},
     str::FromStr,
 };
@@ -11,6 +12,7 @@ use regex::Regex;
 
 use super::K3main;
 
+#[derive(Debug)]
 enum Distribution {
     Armbian,
     RaspberryPiOS,
@@ -116,15 +118,15 @@ impl K3main {
         Device::from_str(&hostname).with_context(|| format!("Could not find device: {}", hostname))
     }
 
-    pub fn setup(&self, device: Option<Device>) -> anyhow::Result<()> {
+    pub fn setup(&self, ip: IpAddr, device: Option<Device>) -> anyhow::Result<()> {
         let device = match device {
-            Some(device) => device,
+            Some(d) => d,
             None => self.get_device()?,
         };
 
-        info!("Setting up for {:?}", device);
-
         let distro = self.get_distro()?;
+
+        info!("Setting up {:?} for {:?}", distro, ip);
 
         self.validate()?;
 
