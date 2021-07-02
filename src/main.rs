@@ -31,8 +31,8 @@ enum Command {
         )]
         ip: IpAddr,
 
-        #[structopt(long = "device", possible_values(&["raspberrypi", "odroidmc1", "odroidhc4"]))]
-        device: Option<Device>,
+        #[structopt(long = "step", help = "Run only a specific step")]
+        step: Option<u8>,
     },
 }
 fn main() {
@@ -40,7 +40,7 @@ fn main() {
 
     SimpleLogger::new().with_level(opt.loglevel).init().unwrap();
 
-    let k3main = match K3main::new() {
+    let mut k3main = match K3main::new() {
         Ok(k3main) => k3main,
         Err(e) => {
             error!("{}", e);
@@ -51,8 +51,8 @@ fn main() {
     match opt.command {
         Command::Init => {}
         Command::Flash => {}
-        Command::Setup { ip, device } => {
-            if let Err(e) = k3main.setup(ip, device) {
+        Command::Setup { ip, step } => {
+            if let Err(e) = k3main.setup(ip, step) {
                 error!("Setup failed: {}", e);
                 exit(1)
             }

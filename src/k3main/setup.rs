@@ -6,6 +6,7 @@ use std::{
     str::FromStr,
 };
 
+use super::connection::Connection;
 use anyhow::{anyhow, Context, Result};
 use log::{debug, error, info};
 use regex::Regex;
@@ -60,6 +61,21 @@ fn apt_install() -> anyhow::Result<()> {
     Ok(())
 }
 
+fn setup_connection(destination: &str) -> anyhow::Result<()> {
+    info!(
+        "Attempting to connect to: {}, using default credentials",
+        destination
+    );
+
+    let connection = Connection::connect_using_default(destination)?;
+
+    let result = connection.exec("ls -al")?;
+
+    println!("{:?}", result);
+
+    unimplemented!()
+}
+
 impl K3main {
     fn setup_armbian(&self, _device: Device) -> anyhow::Result<()> {
         apt_install().with_context(|| "Install failed")
@@ -67,6 +83,10 @@ impl K3main {
 
     fn setup_raspian(&self, _device: Device) -> anyhow::Result<()> {
         apt_install().with_context(|| "Install failed")
+    }
+
+    fn setup_nfs(&self) -> anyhow::Result<()> {
+        unimplemented!()
     }
 
     fn validate(&self) -> io::Result<()> {
@@ -118,11 +138,26 @@ impl K3main {
         Device::from_str(&hostname).with_context(|| format!("Could not find device: {}", hostname))
     }
 
-    pub fn setup(&self, ip: IpAddr, device: Option<Device>) -> anyhow::Result<()> {
-        let device = match device {
-            Some(d) => d,
-            None => self.get_device()?,
+    fn is_storage_device(&self) -> anyhow::Result<bool> {
+        unimplemented!()
+    }
+
+    /// Setup the standard connection using public key found
+
+    pub fn setup(self, ip: IpAddr, step: Option<u8>) -> anyhow::Result<()> {
+        info!("Attempting to connect to: {}", ip);
+        let destination = format!("{}:22", ip.to_string());
+        let connection = match Connection::connect(&destination) {
+            Ok(c) => c,
+            Err(_) => {
+                setup_connection(&destination)?;
+                Connection::connect(&destination)?
+            }
         };
+
+        info!("Connected to: {}", ip);
+
+        let device = self.get_device()?;
 
         let distro = self.get_distro()?;
 
@@ -130,11 +165,23 @@ impl K3main {
 
         self.validate()?;
 
-        match distro {
-            Distribution::Armbian | Distribution::Debian | Distribution::Ubuntu => {
-                self.setup_armbian(device)
+        let step = match self.state.find_setup(ip) {
+            Some(exisiting_setup) => {
+                info!(
+                    "Found existing setup for {} continuing on step {}",
+                    ip, exisiting_setup.step
+                );
+                exisiting_setup.step
             }
-            Distribution::RaspberryPiOS => self.setup_raspian(device),
-        }
+            None => step.unwrap_or(0),
+        };
+
+        // match distro {
+        //     Distribution::Armbian | Distribution::Debian | Distribution::Ubuntu => {
+        //         self.setup_armbian(device)
+        //     }
+        //     Distribution::RaspberryPiOS => self.setup_raspian(device),
+        // }
+        unimplemented!()
     }
 }

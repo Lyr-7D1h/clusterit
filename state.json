@@ -4,5 +4,6 @@
   "ssh_key_path": "/home/lyr/.ssh/id_rsa.pub",
   "ip_offset": 100,
   "ip_gateway": "192.168.2.254",
-  "servers": []
+  "servers": [],
+  "setup": []
 }

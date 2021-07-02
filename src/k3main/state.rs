@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use std::{
     fs::{read_to_string, File},
     io::Write,
@@ -10,28 +11,8 @@ use anyhow::Context;
 use dirs::home_dir;
 use log::info;
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
-pub enum Role {
-    K3SServer,
-    K3SAgent,
-    NFS,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub enum Architecture {
-    Arm,
-    Arm64,
-    Amd64,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Server {
-    ip: IpAddr,
-    role: Role,
-    architecture: Architecture,
-}
+use super::{Server, Setup};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct State {
@@ -41,6 +22,7 @@ pub struct State {
     ip_offset: u32,
     ip_gateway: IpAddr,
     servers: Vec<Server>,
+    setup: Vec<Setup>,
 }
 
 fn get_ssh_key_path() -> anyhow::Result<PathBuf> {
@@ -82,6 +64,7 @@ fn get_default_state() -> State {
         ip_offset: 100,
         ip_gateway: "192.168.2.254".parse().unwrap(),
         servers: vec![],
+        setup: vec![],
     }
 }
 
@@ -103,5 +86,19 @@ impl State {
         let state = serde_json::from_str(&content)?;
 
         Ok(state)
+    }
+
+    pub fn add_setup(&mut self, setup: Setup) {
+        self.setup.push(setup)
+    }
+    pub fn find_setup(self, ip: IpAddr) -> Option<Setup> {
+        self.setup.into_iter().find(|s| s.ip == ip)
+    }
+    pub fn remove_setup(mut self, setup: Setup) {
+        self.setup = self
+            .setup
+            .into_iter()
+            .filter(|s| s.ip == setup.ip)
+            .collect()
     }
 }
