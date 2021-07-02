@@ -37,13 +37,6 @@ impl FromStr for Device {
     }
 }
 
-// fn apt_install() -> anyhow::Result<()> {
-//     info!("Installing needed packages");
-//     command("apt-get", &["update"])?;
-
-//     Ok(())
-// }
-
 impl K3main {
     fn setup_connection(&self, destination: &str) -> anyhow::Result<()> {
         info!(
@@ -159,7 +152,7 @@ impl K3main {
 
         self.validate()?;
 
-        let step = match self.state.find_setup(ip) {
+        let step = match self.state.find_setup(&ip) {
             Some(exisiting_setup) => {
                 info!(
                     "Found existing setup for {} continuing on step {}",

@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::HashMap,
     fs::{read_to_string, File},
     io::Write,
     net::IpAddr,
@@ -21,7 +22,7 @@ pub struct State {
     ip_offset: u32,
     ip_gateway: IpAddr,
     servers: Vec<Server>,
-    setup: Vec<Setup>,
+    setup: HashMap<IpAddr, Setup>,
 }
 
 impl State {
@@ -50,7 +51,7 @@ impl State {
             ip_offset: 100,
             ip_gateway: "192.168.2.254".parse().unwrap(),
             servers: vec![],
-            setup: vec![],
+            setup: HashMap::new(),
         };
 
         let default_state_json = serde_json::to_string(&default_state)?;
@@ -75,17 +76,20 @@ impl State {
         &self.ssh_pub_key
     }
 
-    pub fn add_setup(&mut self, setup: Setup) {
-        self.setup.push(setup)
+    // pub fn add_setup(&mut self, setup: Setup) {
+    //     self.setup.push(setup)
+    // }
+
+    pub fn find_setup(&self, ip: &IpAddr) -> Option<&Setup> {
+        self.setup.get(ip)
+        // self.setup.into_iter().find(|s| s.ip == ip)
     }
-    pub fn find_setup(self, ip: IpAddr) -> Option<Setup> {
-        self.setup.into_iter().find(|s| s.ip == ip)
-    }
+
     pub fn remove_setup(mut self, setup: Setup) {
-        self.setup = self
-            .setup
-            .into_iter()
-            .filter(|s| s.ip == setup.ip)
-            .collect()
+        // self.setup = self
+        //     .setup
+        //     .into_iter()
+        //     .filter(|s| s.ip == setup.ip)
+        //     .collect()
     }
 }
