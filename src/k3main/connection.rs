@@ -11,7 +11,9 @@ pub struct Connection {
 
 #[derive(Debug)]
 pub struct ExecResult {
-    exit_code: i32,
+    pub exit_code: i32,
+    pub stdout: String,
+    pub stderr: String,
 }
 
 impl Connection {
@@ -58,13 +60,19 @@ impl Connection {
     pub fn exec(&self, command: &str) -> anyhow::Result<ExecResult> {
         let mut channel = self.session.channel_session()?;
         channel.exec(command)?;
-        let mut s = String::new();
-        channel.read_to_string(&mut s)?;
-        println!("{}", s);
+
+        let mut stdout = String::new();
+        channel.read_to_string(&mut stdout)?;
+
+        let mut stderr = String::new();
+        channel.stderr().read_to_string(&mut stderr)?;
+
         channel.wait_close()?;
 
         return Ok(ExecResult {
             exit_code: channel.exit_status()?,
+            stdout,
+            stderr,
         });
     }
 }

@@ -18,7 +18,7 @@ use super::{Server, Setup};
 pub struct State {
     node_token_secret: String,
     node_token: Option<String>,
-    ssh_key_path: PathBuf,
+    pub_ssh_key: String,
     ip_offset: u32,
     ip_gateway: IpAddr,
     servers: Vec<Server>,
@@ -60,7 +60,7 @@ fn get_default_state() -> State {
             .take(40)
             .map(char::from)
             .collect(),
-        ssh_key_path: get_ssh_key_path().unwrap(),
+        pub_ssh_key: "SOME_KEY".into(),
         ip_offset: 100,
         ip_gateway: "192.168.2.254".parse().unwrap(),
         servers: vec![],
@@ -86,6 +86,9 @@ impl State {
         let state = serde_json::from_str(&content)?;
 
         Ok(state)
+    }
+    pub fn get_pub_ssh_key(&self) -> &String {
+        &self.pub_ssh_key
     }
 
     pub fn add_setup(&mut self, setup: Setup) {

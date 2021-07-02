@@ -1,14 +1,10 @@
-use std::{
-    fs::read_to_string,
-    io,
-    net::IpAddr,
-    process::{Command, Output},
-    str::FromStr,
-};
+use std::{fs::read_to_string, io, net::IpAddr, str::FromStr};
+
+use crate::k3main::step_executer::StepExecuter;
 
 use super::connection::Connection;
 use anyhow::{anyhow, Context, Result};
-use log::{debug, error, info};
+use log::info;
 use regex::Regex;
 
 use super::K3main;
@@ -37,52 +33,52 @@ impl FromStr for Device {
             "raspberrypi" => Device::RaspberryPi,
             _ => return Err(anyhow!("Could not find divice: {}", s)),
         };
-
         Ok(device)
     }
 }
 
-fn command(command: &str, args: &[&str]) -> io::Result<Output> {
-    debug!("Executing `{} {}`", command, args.join(" "));
-    let output = Command::new(command).args(args).output();
+// fn apt_install() -> anyhow::Result<()> {
+//     info!("Installing needed packages");
+//     command("apt-get", &["update"])?;
 
-    if output.is_ok() {
-        output
-    } else {
-        error!("{:?}", output);
-        output
-    }
-}
-
-fn apt_install() -> anyhow::Result<()> {
-    info!("Installing needed packages");
-    command("apt-get", &["update"])?;
-
-    Ok(())
-}
-
-fn setup_connection(destination: &str) -> anyhow::Result<()> {
-    info!(
-        "Attempting to connect to: {}, using default credentials",
-        destination
-    );
-
-    let connection = Connection::connect_using_default(destination)?;
-
-    let result = connection.exec("ls -al")?;
-
-    println!("{:?}", result);
-
-    unimplemented!()
-}
+//     Ok(())
+// }
 
 impl K3main {
+    fn setup_connection(&self, destination: &str) -> anyhow::Result<()> {
+        info!(
+            "Attempting to connect to: {}, using known default credentials",
+            destination
+        );
+        let connection = Connection::connect_using_default(destination)?;
+
+        let mut executer = StepExecuter::new(connection);
+
+        executer.add_step("sudo mkdir /root/.ssh");
+        executer.add_step(&format!(
+            "sudo sh -c 'echo -n \"{}\" > /root/.ssh/authorized_keys'",
+            self.state.get_pub_ssh_key()
+        ));
+
+        info!("Setting up root ssh with ");
+        executer.exec().or_else(|e| {
+            Err(anyhow::Error::msg(format!(
+                "Setup connection failed at step {}",
+                e
+            )))
+        })?;
+
+        Ok(())
+    }
+
     fn setup_armbian(&self, _device: Device) -> anyhow::Result<()> {
-        apt_install().with_context(|| "Install failed")
+        // apt_install().with_context(|| "Install failed")
+        unimplemented!()
     }
 
     fn setup_raspian(&self, _device: Device) -> anyhow::Result<()> {
-        apt_install().with_context(|| "Install failed")
+        // apt_install().with_context(|| "Install failed")
+        unimplemented!()
     }
 
     fn setup_nfs(&self) -> anyhow::Result<()> {
@@ -90,9 +86,6 @@ impl K3main {
     }
 
     fn validate(&self) -> io::Result<()> {
-        let ouput = command("zcat", &["/proc/config.gz"])?;
-        println!("{:?}", ouput.stdout);
-
         unimplemented!()
     }
 
@@ -150,7 +143,8 @@ impl K3main {
         let connection = match Connection::connect(&destination) {
             Ok(c) => c,
             Err(_) => {
-                setup_connection(&destination)?;
+                info!("Standard connection failed");
+                self.setup_connection(&destination)?;
                 Connection::connect(&destination)?
             }
         };

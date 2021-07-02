@@ -6,6 +6,8 @@ pub mod setup;
 
 mod connection;
 
+mod step_executer;
+
 mod state;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -26,6 +28,7 @@ pub enum Architecture {
 pub struct Server {
     ip: IpAddr,
     role: Role,
+    initial_server: bool,
     architecture: Architecture,
 }
 

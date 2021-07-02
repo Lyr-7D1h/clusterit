@@ -1,7 +1,7 @@
 {
   "node_token_secret": "UiIVYs6D08m97etA10nGQulzMDbxHY",
   "node_token": null,
-  "ssh_key_path": "/home/lyr/.ssh/id_rsa.pub",
+  "pub_ssh_key": "YOUR_SSH_KEY",
   "ip_offset": 100,
   "ip_gateway": "192.168.2.254",
   "servers": [],
