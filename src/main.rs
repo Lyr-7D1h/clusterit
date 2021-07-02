@@ -1,6 +1,6 @@
-use std::{net::IpAddr, process::exit};
+use std::{net::IpAddr, path::PathBuf, process::exit};
 
-use k3main::k3main::{setup::Device, K3main};
+use k3main::k3main::K3main;
 use log::{error, LevelFilter};
 use simple_logger::SimpleLogger;
 use structopt::StructOpt;
@@ -22,8 +22,10 @@ struct Opt {
 
 #[derive(StructOpt, Debug)]
 enum Command {
-    Init,
-    Flash,
+    Init {
+        #[structopt(long = "ssh-pub-key", help = "Run only a specific step")]
+        ssh_pub_key: PathBuf,
+    },
     Setup {
         #[structopt(
             long = "ip",
@@ -40,18 +42,22 @@ fn main() {
 
     SimpleLogger::new().with_level(opt.loglevel).init().unwrap();
 
-    let mut k3main = match K3main::new() {
-        Ok(k3main) => k3main,
-        Err(e) => {
-            error!("{}", e);
-            exit(1);
-        }
-    };
-
     match opt.command {
-        Command::Init => {}
-        Command::Flash => {}
+        Command::Init { ssh_pub_key } => {
+            if let Err(e) = K3main::init(&ssh_pub_key) {
+                error!("{}", e);
+                exit(1);
+            };
+        }
         Command::Setup { ip, step } => {
+            let k3main = match K3main::load() {
+                Ok(k3main) => k3main,
+                Err(e) => {
+                    error!("{}", e);
+                    exit(1);
+                }
+            };
+
             if let Err(e) = k3main.setup(ip, step) {
                 error!("Setup failed: {}", e);
                 exit(1)

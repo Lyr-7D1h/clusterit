@@ -8,7 +8,6 @@ use std::{
 };
 
 use anyhow::Context;
-use dirs::home_dir;
 use log::info;
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 
@@ -18,77 +17,62 @@ use super::{Server, Setup};
 pub struct State {
     node_token_secret: String,
     node_token: Option<String>,
-    pub_ssh_key: String,
+    ssh_pub_key: String,
     ip_offset: u32,
     ip_gateway: IpAddr,
     servers: Vec<Server>,
     setup: Vec<Setup>,
 }
 
-fn get_ssh_key_path() -> anyhow::Result<PathBuf> {
-    let ssh_dir = home_dir()
-        .ok_or(anyhow::Error::msg("Could not find home"))?
-        .join(".ssh");
-
-    for entry in ssh_dir.read_dir()? {
-        let entry = entry?;
-
-        if entry.path().is_file() {
-            let filename = entry
-                .file_name()
-                .into_string()
-                .expect("Could not get filename");
-
-            println!("{}", filename);
-            match filename.as_str() {
-                "id_ed25519.pub" => return Ok(entry.path()),
-                "id_rsa.pub" => return Ok(entry.path()),
-                "id_ecdsa.pub" => return Ok(entry.path()),
-                _ => {}
-            };
-        }
-    }
-
-    return Err(anyhow::Error::msg("Could not find a SSH key"));
-}
-
-fn get_default_state() -> State {
-    State {
-        node_token: None,
-        node_token_secret: thread_rng()
-            .sample_iter(&Alphanumeric)
-            .take(40)
-            .map(char::from)
-            .collect(),
-        pub_ssh_key: "SOME_KEY".into(),
-        ip_offset: 100,
-        ip_gateway: "192.168.2.254".parse().unwrap(),
-        servers: vec![],
-        setup: vec![],
-    }
-}
-
 impl State {
-    pub fn new() -> anyhow::Result<State> {
+    pub fn init(ssh_pub_key_path: &PathBuf) -> anyhow::Result<()> {
         let path = PathBuf::from_str("./state.json")?;
 
-        if !path.exists() {
-            let default_state = get_default_state();
-            let default_state_json = serde_json::to_string(&default_state)?;
-
-            info!("Writing default state to file {:?}", path);
-            let mut file = File::create(&path)?;
-            file.write_all(default_state_json.as_bytes())?;
+        if path.exists() {
+            return Err(anyhow::Error::msg(format!("{:?} already exsits", path)));
         }
+
+        let ssh_pub_key = read_to_string(ssh_pub_key_path)
+            .with_context(|| format!("Could not open ssh key: {:?}", ssh_pub_key_path))?;
+
+        if ssh_pub_key.starts_with("ssh-") == false && ssh_pub_key.starts_with("ecdsa-") == false {
+            return Err(anyhow::Error::msg("Invalid public key"));
+        }
+
+        let default_state = State {
+            node_token: None,
+            node_token_secret: thread_rng()
+                .sample_iter(&Alphanumeric)
+                .take(40)
+                .map(char::from)
+                .collect(),
+            ssh_pub_key,
+            ip_offset: 100,
+            ip_gateway: "192.168.2.254".parse().unwrap(),
+            servers: vec![],
+            setup: vec![],
+        };
+
+        let default_state_json = serde_json::to_string(&default_state)?;
+
+        info!("Writing state to file {:?}", path);
+        let mut file = File::create(&path)?;
+        file.write_all(default_state_json.as_bytes())?;
+
+        Ok(())
+    }
+
+    pub fn load() -> anyhow::Result<State> {
+        let path = PathBuf::from_str("./state.json")?;
 
         info!("Reading {:?}", path);
         let content = read_to_string(path).with_context(|| "Could not read state.json")?;
         let state = serde_json::from_str(&content)?;
-
         Ok(state)
     }
+
     pub fn get_pub_ssh_key(&self) -> &String {
-        &self.pub_ssh_key
+        &self.ssh_pub_key
     }
 
     pub fn add_setup(&mut self, setup: Setup) {

@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
-use std::{error::Error, net::IpAddr};
+use std::{net::IpAddr, path::PathBuf};
 
-mod config;
 pub mod setup;
 
 mod connection;
@@ -39,18 +38,18 @@ pub struct Setup {
 }
 
 pub struct K3main {
-    _config: config::Config,
     state: state::State,
 }
 
 impl K3main {
-    pub fn new() -> Result<K3main, Box<dyn Error>> {
-        let config = config::from_file()?;
-        let state = state::State::new()?;
+    pub fn init(ssh_pub_key_path: &PathBuf) -> anyhow::Result<()> {
+        state::State::init(&ssh_pub_key_path)?;
 
-        Ok(K3main {
-            _config: config,
-            state,
-        })
+        Ok(())
+    }
+    pub fn load() -> anyhow::Result<K3main> {
+        let state = state::State::load()?;
+
+        Ok(K3main { state })
     }
 }
