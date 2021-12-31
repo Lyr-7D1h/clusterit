@@ -6,7 +6,7 @@ const DEFAULT_USERS: &'static [&'static str] = &["root", "pi"];
 const DEFAULT_PASSWORDS: &'static [&'static str] = &["4321", "raspberry"];
 
 pub struct Connection {
-    session: ssh2::Session,
+    session: Session,
 }
 
 #[derive(Debug)]

@@ -1,13 +1,13 @@
 use std::{fs::read_to_string, io, net::IpAddr, str::FromStr};
 
-use crate::k3main::step_executer::StepExecuter;
+use crate::clusterit::step_executer::StepExecuter;
 
 use super::connection::Connection;
 use anyhow::{anyhow, Context, Result};
 use log::info;
 use regex::Regex;
 
-use super::K3main;
+use super::clusterit;
 
 #[derive(Debug)]
 enum Distribution {
@@ -37,7 +37,7 @@ impl FromStr for Device {
     }
 }
 
-impl K3main {
+impl clusterit {
     fn setup_connection(&self, destination: &str) -> anyhow::Result<()> {
         info!(
             "Attempting to connect to: {}, using known default credentials",

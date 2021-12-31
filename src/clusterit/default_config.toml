@@ -1,0 +1,31 @@
+# [servers.{ROLE}.{DEVICE_NAME}]
+
+[servers.odroid-mc1-init]
+ip = "192.168.0.1"
+github_authorized_keys = "https://github.com/Lyr-7D1h.keys"
+auto_upgrade = { reboot = true }
+k3s = { role = "init", opts = "--disable=traefik --disable=local-storage --tls-san=66.23.63.12" }
+
+[servers.odroid-mc1-server]
+ip = "192.168.0.2"
+github_authorized_keys = "https://github.com/Lyr-7D1h.keys"
+auto_upgrade = { reboot = true }
+k3s = { role = "server", opts = "--disable=traefik --disable=local-storage --tls-san=66.23.63.12" }
+
+[servers.odroid-mc1-server-2]
+ip = "192.168.0.3"
+github_authorized_keys = "https://github.com/Lyr-7D1h.keys"
+auto_upgrade = { reboot = true }
+k3s = { role = "server", opts = "--disable=traefik --disable=local-storage --tls-san=66.23.63.12" }
+
+[servers.odroid-mc1-agent]
+ip = "192.168.0.4"
+github_authorized_keys = "https://github.com/Lyr-7D1h.keys"
+auto_upgrade = { reboot = true }
+k3s = { role = "agent" }
+
+[servers.odroid-hc4]
+ip = "192.168.0.5"
+github_authorized_keys = "https://github.com/Lyr-7D1h.keys"
+auto_upgrade = { reboot = false }
+nfs = { }

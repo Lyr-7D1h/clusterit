@@ -37,19 +37,19 @@ pub struct Setup {
     ip: IpAddr,
 }
 
-pub struct K3main {
+pub struct clusterit {
     state: state::State,
 }
 
-impl K3main {
+impl clusterit {
     pub fn init(ssh_pub_key_path: &PathBuf) -> anyhow::Result<()> {
         state::State::init(&ssh_pub_key_path)?;
 
         Ok(())
     }
-    pub fn load() -> anyhow::Result<K3main> {
+    pub fn load() -> anyhow::Result<clusterit> {
         let state = state::State::load()?;
 
-        Ok(K3main { state })
+        Ok(clusterit { state })
     }
 }
