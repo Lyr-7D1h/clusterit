@@ -1,55 +1,48 @@
-use serde::{Deserialize, Serialize};
-use std::{net::IpAddr, path::PathBuf};
+use std::{path::PathBuf, sync::mpsc, thread};
 
-pub mod setup;
+use anyhow::Result;
 
-mod connection;
+mod config;
 
-mod step_executer;
+use config::Config;
+use log::debug;
+use ssh::Session;
 
-mod state;
-
-#[derive(Serialize, Deserialize, Debug)]
-pub enum Role {
-    K3SServer,
-    K3SAgent,
-    NFS,
+pub struct Clusterit {
+    config: Config,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub enum Architecture {
-    Arm,
-    Arm64,
-    Amd64,
-}
+impl Clusterit {
+    pub fn from_file(path: &PathBuf) -> Result<Clusterit> {
+        let config = Config::from_file(path)?;
+        println!("{:?}", config);
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Server {
-    ip: IpAddr,
-    role: Role,
-    initial_server: bool,
-    architecture: Architecture,
-}
+        Ok(Clusterit { config })
+    }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Setup {
-    step: u8,
-    ip: IpAddr,
-}
+    pub fn setup(self) -> Result<()> {
+        for (device_name, server) in self.config.servers.into_iter() {
+            debug!("Connecting to {} ({})", device_name, server.ip);
+            let (sender, receiver) = mpsc::channel();
 
-pub struct clusterit {
-    state: state::State,
-}
+            thread::spawn(move || {
+                debug!("Spawned new thread");
+                let mut session = Session::new().unwrap();
+                session.set_host(&server.ip).unwrap();
+                session.parse_config(None).unwrap();
+                session.connect().unwrap();
+                println!("asdf");
+                session.userauth_password("asdf").unwrap();
+                session.userauth_publickey_auto(Some("asdf")).unwrap();
 
-impl clusterit {
-    pub fn init(ssh_pub_key_path: &PathBuf) -> anyhow::Result<()> {
-        state::State::init(&ssh_pub_key_path)?;
+                session.disconnect().unwrap();
+            })
+            .join()
+            .unwrap();
+
+            sender.send("asdf")?;
+        }
 
         Ok(())
-    }
-    pub fn load() -> anyhow::Result<clusterit> {
-        let state = state::State::load()?;
-
-        Ok(clusterit { state })
     }
 }

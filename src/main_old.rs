@@ -11,7 +11,6 @@ use structopt::StructOpt;
     author = "Lyr 7d1h",
     about = "A tool for settings up and managing a k3 cluster."
 )]
-
 struct Opt {
     #[structopt(subcommand)]
     command: Command,
@@ -37,6 +36,7 @@ enum Command {
         step: Option<u8>,
     },
 }
+
 fn main() {
     let opt = Opt::from_args();
 

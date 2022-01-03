@@ -1,14 +1,34 @@
-use ssh::*;
+use env_logger::Builder;
+use log::LevelFilter;
+use std::path::PathBuf;
+use structopt::StructOpt;
+
+use clusterit::Clusterit;
+
+#[derive(StructOpt, Debug)]
+#[structopt(
+    name = "clusterit",
+    author = "Lyr 7d1h",
+    about = "A tool for settings up and managing a k3 cluster."
+)]
+struct Opt {
+    #[structopt(
+        short = "c",
+        help = "Run only a specific step",
+        default_value = "config.toml"
+    )]
+    config: PathBuf,
+
+    #[structopt(long = "log-level", global = true, default_value = "debug", possible_values(&["debug", "info", "warn", "error"]))]
+    loglevel: LevelFilter,
+}
 
 fn main() {
     let opt = Opt::from_args();
 
-    SimpleLogger::new().with_level(opt.loglevel).init().unwrap();
+    Builder::new().filter(None, opt.loglevel).init();
 
-    let mut session = Session::new().unwrap();
-    session.set_host("192.168.2.3").unwrap();
-    session.parse_config(None).unwrap();
-    session.connect().unwrap();
-    println!("{:?}", session.is_server_known());
-    session.userauth_publickey_auto(None).unwrap();
+    let clusterit = Clusterit::from_file(&opt.config).expect("Failed to load clusterit");
+
+    clusterit.setup().expect("Setup failed")
 }

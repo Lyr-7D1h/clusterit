@@ -1,1 +1,3 @@
-pub mod clusterit;
+mod clusterit;
+
+pub use clusterit::Clusterit;

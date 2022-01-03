@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
 
+set -e
+
+DOCKER_NAME=clusterit-ssh-test-server
+
 cd "$(dirname "$0")/../test"
 
-docker build -t clusterit .
+docker build -t $DOCKER_NAME .
 
-docker run -it --hostname raspberrypi --rm clusterit setup
+docker stop $DOCKER_NAME || true
+
+docker run -dit --rm --hostname raspberrypi --name $DOCKER_NAME -p 8000:22 $DOCKER_NAME
+
+cd ..
+
+cargo run -- --config ./test/config.toml
+
+docker stop $DOCKER_NAME 
