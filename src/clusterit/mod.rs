@@ -1,12 +1,12 @@
-use std::{path::PathBuf, sync::mpsc, thread};
+use std::path::PathBuf;
 
 use anyhow::Result;
 
 mod config;
+mod connection;
 
 use config::Config;
-use log::debug;
-use ssh::Session;
+use connection::Connection;
 
 pub struct Clusterit {
     config: Config,
@@ -21,28 +21,34 @@ impl Clusterit {
     }
 
     pub fn setup(self) -> Result<()> {
-        for (device_name, server) in self.config.servers.into_iter() {
-            debug!("Connecting to {} ({})", device_name, server.ip);
-            let (sender, receiver) = mpsc::channel();
+        let connection = Connection::new(self.config.ip, self.config.port as usize)?;
 
-            thread::spawn(move || {
-                debug!("Spawned new thread");
-                let mut session = Session::new().unwrap();
-                session.set_host(&server.ip).unwrap();
-                session.parse_config(None).unwrap();
-                session.connect().unwrap();
-                println!("asdf");
-                session.userauth_password("asdf").unwrap();
-                session.userauth_publickey_auto(Some("asdf")).unwrap();
+        connection.connect(self.config.user.as_deref(), self.config.password.as_deref())?;
 
-                session.disconnect().unwrap();
-            })
-            .join()
-            .unwrap();
+        todo!()
+        // let (sender, receiver) = mpsc::channel();
 
-            sender.send("asdf")?;
-        }
+        // for (device_name, server) in self.config.servers.into_iter() {
 
-        Ok(())
+        //     let sender = sender.clone();
+        //     thread::spawn(move || {
+        //         debug!("Spawned new thread");
+        //         let mut session = Session::new().unwrap();
+        //         session.set_host(&server.ip).unwrap();
+        //         session.parse_config(None).unwrap();
+        //         session.connect().unwrap();
+        //         println!("asdf");
+        //         session.userauth_password("asdf").unwrap();
+        //         session.userauth_publickey_auto(Some("asdf")).unwrap();
+
+        //         session.disconnect().unwrap();
+        //         sender.send("asdf").unwrap();
+        //     })
+        //     .join()
+        //     .unwrap();
+        // }
+        // debug!("{:?}", receiver.recv());
+
+        // Ok(())
     }
 }

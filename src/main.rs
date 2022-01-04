@@ -14,12 +14,13 @@ use clusterit::Clusterit;
 struct Opt {
     #[structopt(
         short = "c",
+        long = "config",
         help = "Run only a specific step",
         default_value = "config.toml"
     )]
     config: PathBuf,
 
-    #[structopt(long = "log-level", global = true, default_value = "debug", possible_values(&["debug", "info", "warn", "error"]))]
+    #[structopt(long = "log-level", global = true, default_value = "warn", possible_values(&["debug", "info", "warn", "error"]))]
     loglevel: LevelFilter,
 }
 

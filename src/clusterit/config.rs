@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs, path::PathBuf};
+use std::{fs, path::PathBuf};
 
 use anyhow::{Context, Result};
 use serde::Deserialize;
@@ -8,20 +8,18 @@ const DEFAULT_CONFIG: &str = include_str!("./default_config.toml");
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
-    pub servers: HashMap<String, Server>,
+    pub ip: String,
+    pub user: Option<String>,
+    pub password: Option<String>,
+    pub port: u16,
+    pub debpkgs: Vec<String>,
 }
 
 // #[derive(Deserialize, Debug)]
-// struct Connection {
-//     users: Vec<String>,
-//     password: Vec<String>,
+// pub struct Server {
+// pub ip: String,
+// connection: Connection,
 // }
-
-#[derive(Deserialize, Debug)]
-pub struct Server {
-    pub ip: String,
-    // connection: Connection,
-}
 
 // #[derive(Deserialize, Debug)]
 // struct Keys {
@@ -43,13 +41,13 @@ fn merge(a: &mut Value, b: &Value) {
 
 impl Config {
     pub fn from_file(path: &PathBuf) -> Result<Config> {
-        let mut raw_config: Value = {
+        let raw_config: Value = {
             let content = fs::read_to_string(path)?;
             toml::from_str(&content).context("Could not parse config")?
         };
-        let raw_default_config: Value = toml::from_str(DEFAULT_CONFIG)?;
+        let mut raw_default_config: Value = toml::from_str(DEFAULT_CONFIG)?;
 
-        merge(&mut raw_config, &raw_default_config);
+        merge(&mut raw_default_config, &raw_config);
 
         Ok(raw_config.try_into().unwrap())
     }
