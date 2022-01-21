@@ -4,9 +4,11 @@ use anyhow::Result;
 
 mod config;
 mod connection;
+mod executer;
 
 use config::Config;
 use connection::Connection;
+use executer::Executer;
 
 pub struct Clusterit {
     config: Config,
@@ -21,11 +23,16 @@ impl Clusterit {
     }
 
     pub fn setup(self) -> Result<()> {
-        let connection = Connection::new(self.config.ip, self.config.port as usize)?;
+        let mut connection = Connection::new(self.config.ip, self.config.port as usize)?;
 
         connection.connect(self.config.user.as_deref(), self.config.password.as_deref())?;
 
+        let e = Executer::new(connection);
+
+        // e.install(self.config.debpkgs);
+
         todo!()
+
         // let (sender, receiver) = mpsc::channel();
 
         // for (device_name, server) in self.config.servers.into_iter() {

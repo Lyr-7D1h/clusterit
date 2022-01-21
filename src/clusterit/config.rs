@@ -12,7 +12,7 @@ pub struct Config {
     pub user: Option<String>,
     pub password: Option<String>,
     pub port: u16,
-    pub debpkgs: Vec<String>,
+    // pub modules: Vec<Value>,
 }
 
 // #[derive(Deserialize, Debug)]
@@ -48,6 +48,8 @@ impl Config {
         let mut raw_default_config: Value = toml::from_str(DEFAULT_CONFIG)?;
 
         merge(&mut raw_default_config, &raw_config);
+
+        println!("{raw_config:?}");
 
         Ok(raw_config.try_into().unwrap())
     }

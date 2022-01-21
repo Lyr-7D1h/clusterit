@@ -1,12 +1,16 @@
+use std::io::Read;
+
 use log::debug;
 
 use anyhow::Result;
-use ssh::Session;
+use ssh::{Channel, Session};
 
-pub struct Connection {
+pub struct Connection<'a> {
     host: String,
     port: usize,
     session: Session,
+
+    exec_channel: Option<Channel<'a>>,
 }
 
 #[derive(Debug)]
@@ -16,8 +20,8 @@ pub struct ExecResult {
     pub stderr: String,
 }
 
-impl Connection {
-    pub fn new(host: String, port: usize) -> Result<Connection> {
+impl<'a> Connection<'a> {
+    pub fn new(host: String, port: usize) -> Result<Connection<'a>> {
         let mut session = Session::new().unwrap();
         session.set_host(&host)?;
         session.parse_config(None)?;
@@ -27,11 +31,12 @@ impl Connection {
         Ok(Connection {
             host,
             port,
+            exec_channel: None,
             session,
         })
     }
 
-    pub fn connect(mut self, user: Option<&str>, password: Option<&str>) -> Result<()> {
+    pub fn connect(&mut self, user: Option<&str>, password: Option<&str>) -> Result<()> {
         debug!(
             "Connecting to ssh://{}@{}:{}",
             user.unwrap_or_else(|| &""),
@@ -51,6 +56,32 @@ impl Connection {
         }
 
         Ok(())
+    }
+
+    pub fn exec(mut self, command: &str) -> Result<String> {
+        let mut s = match self.exec_channel {
+            Some(s) => s,
+            None => {
+                let mut s = self.session.channel_new()?;
+                s.open_session()?;
+                s
+            }
+        };
+
+        s.request_exec(command.as_bytes()).unwrap();
+        s.send_eof().unwrap();
+
+        let mut buf = Vec::new();
+        s.stdout().read_to_end(&mut buf).unwrap();
+        return Ok(String::from_utf8_lossy(&buf).into_owned());
+    }
+
+    pub fn write(mut self) {
+        todo!()
+    }
+
+    pub fn read(mut self) {
+        todo!()
     }
 
     // pub fn exec(&self, command: &str) -> anyhow::Result<ExecResult> {

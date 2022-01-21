@@ -1,6 +1,6 @@
 # Cluster IT
 
-Clearly define your servers and let clusterit do its magic. 
+Clearly define your servers and let clusterit do its magic.
 It will setup the server to be as close to configuration as possible with minimal overhead and sane defaults.
 This does not require any prerequisites on the server.
 
@@ -14,9 +14,37 @@ A zero-config solution for setting up one big cluster for all your devices.
 - Odroid MC1
 - Raspberry Pi B+
 
-# Requirements
+# Running
 
-Make sure you have a running ssh-agent (https://wiki.archlinux.org/title/SSH_keys#SSH_agents)
+Requirements:
+
+- libssh
+- rustup
+- cc
+
+```bash
+rustup install `cat rust-toolchain`
+cargo run
+```
+
+## Developing
+
+```bash
+cargo install cargo-watch
+cargo watch -x run
+```
+
+## Tests
+
+Additional Requirements:
+
+- docker
+
+```bash
+./script/test
+```
+
+# Developing
 
 # Steps
 
@@ -36,4 +64,3 @@ Make sure you have a running ssh-agent (https://wiki.archlinux.org/title/SSH_key
 - Auto update local kube config
 - Local tool that communicates with remote
 - Installer
-
