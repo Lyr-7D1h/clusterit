@@ -1,10 +1,10 @@
 # Cluster IT
 
+**Under Development**
+
 Clearly define your servers and let clusterit do its magic.
 It will setup the server to be as close to configuration as possible with minimal overhead and sane defaults.
 This does not require any prerequisites on the server.
-
-**Unusable atm**
 
 A zero-config solution for setting up one big cluster for all your devices.
 
@@ -13,6 +13,12 @@ A zero-config solution for setting up one big cluster for all your devices.
 - Odroid HC4
 - Odroid MC1
 - Raspberry Pi B+
+
+# Usage
+
+```bash
+clusterit
+```
 
 # Running
 

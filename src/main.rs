@@ -12,16 +12,26 @@ use clusterit::Clusterit;
     about = "A tool for settings up and managing a k3 cluster."
 )]
 struct Opt {
-    #[structopt(
-        short = "c",
-        long = "config",
-        help = "Run only a specific step",
-        default_value = "config.toml"
-    )]
-    config: PathBuf,
-
     #[structopt(long = "log-level", global = true, default_value = "warn", possible_values(&["debug", "info", "warn", "error"]))]
     loglevel: LevelFilter,
+
+    #[structopt(subcommand)]
+    cmd: Command,
+}
+
+enum Command {
+    SetupPubAuth {
+        destination: String,
+    },
+    Apply {
+        #[structopt(
+            short = "c",
+            long = "config",
+            help = "Path to config file",
+            default_value = "config.toml"
+        )]
+        config: PathBuf,
+    },
 }
 
 fn main() {
@@ -29,7 +39,11 @@ fn main() {
 
     Builder::new().filter(None, opt.loglevel).init();
 
-    let clusterit = Clusterit::from_file(&opt.config).expect("Failed to load clusterit");
-
-    clusterit.setup().expect("Setup failed")
+    match opt {
+        Opt::SetupPubAuth { destination } => Clusterit::setup_pub_auth(destination),
+        Opt::Apply { config, loglevel } => Clusterit::from_file(config)
+            .expect("Failed to load clusterit")
+            .execute()
+            .expect("Execute failed"),
+    }
 }
