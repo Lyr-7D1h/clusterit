@@ -1,8 +1,9 @@
 use std::{fs, path::PathBuf};
 
-use anyhow::{Context, Result};
 use serde::Deserialize;
 use toml::{value::Map, Value};
+
+use super::error::ClusteritError;
 
 const DEFAULT_CONFIG: &str = include_str!("./default_config.toml");
 
@@ -40,10 +41,12 @@ fn merge(a: &mut Value, b: &Value) {
 }
 
 impl Config {
-    pub fn from_file(path: &PathBuf) -> Result<Config> {
+    pub fn from_file(path: &PathBuf) -> Result<Config, ClusteritError> {
         let raw_config: Value = {
-            let content = fs::read_to_string(path)?;
-            toml::from_str(&content).context("Could not parse config")?
+            let content = fs::read_to_string(path).or(Err(ClusteritError::ConfigParseError(
+                format!("Could not read config from: {path:?}"),
+            )))?;
+            toml::from_str(&content)?
         };
         let mut raw_default_config: Value = toml::from_str(DEFAULT_CONFIG)?;
 

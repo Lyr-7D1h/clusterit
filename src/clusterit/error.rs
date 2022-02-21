@@ -6,7 +6,7 @@ use super::connection::ConnectionError;
 #[derive(Debug)]
 pub enum ClusteritError {
     ConnectionError(ConnectionError),
-    ConfigParseError(&'static str),
+    ConfigParseError(String),
 }
 
 impl fmt::Display for ClusteritError {
@@ -23,5 +23,11 @@ impl error::Error for ClusteritError {}
 impl From<ConnectionError> for ClusteritError {
     fn from(e: ConnectionError) -> Self {
         ClusteritError::ConnectionError(e)
+    }
+}
+
+impl From<toml::de::Error> for ClusteritError {
+    fn from(e: toml::de::Error) -> Self {
+        ClusteritError::ConfigParseError(e.to_string())
     }
 }

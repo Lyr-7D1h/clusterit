@@ -1,3 +1,5 @@
+use std::hash::Hash;
+
 use log::debug;
 
 use ssh::Session;
@@ -19,7 +21,7 @@ pub struct ExecResult {
 
 impl Connection {
     /// Connect using OpenSSH definition of destination (ssh://[user@]hostname[:port.])
-    pub fn connect_to_destination(destination: String) -> Result<Connection, ConnectionError> {
+    pub fn connect_to_destination(destination: &str) -> Result<Connection, ConnectionError> {
         debug!("Connecting to '{destination}'",);
 
         let destination = destination
@@ -29,12 +31,12 @@ impl Connection {
         let mut session =
             Session::new().or(Err(ssh::Error::Ssh("Could not create session".into())))?;
 
-        let parts = destination.split("@");
-        if parts.count() >= 2 {
+        let mut parts = destination.split("@");
+        if parts.clone().count() >= 2 {
             let user = parts.next().unwrap();
             session.set_username(user);
 
-            let dest = parts.next().unwrap().split(":");
+            let mut dest = parts.next().unwrap().split(":");
             let hostname = dest.next().unwrap();
             session.set_host(hostname);
 

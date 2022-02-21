@@ -11,7 +11,7 @@ impl fmt::Display for ConnectionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ConnectionError::ParseError(s) => write!(f, "Connection Parsing Error: {s}"),
-            &ConnectionError::Ssh(s) => s.fmt(f),
+            ConnectionError::Ssh(s) => s.fmt(f),
         }
     }
 }

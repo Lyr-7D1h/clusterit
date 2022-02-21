@@ -1,5 +1,4 @@
-use env_logger::Builder;
-use log::LevelFilter;
+use log::{error, LevelFilter};
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -12,13 +11,14 @@ use clusterit::Clusterit;
     about = "A tool for settings up and managing a k3 cluster."
 )]
 struct Opt {
-    #[structopt(long = "log-level", global = true, default_value = "warn", possible_values(&["debug", "info", "warn", "error"]))]
-    loglevel: LevelFilter,
-
     #[structopt(subcommand)]
     cmd: Command,
+
+    #[structopt(long = "log-level", global = true, default_value = "warn", possible_values(&["debug", "info", "warn", "error"]))]
+    loglevel: LevelFilter,
 }
 
+#[derive(StructOpt, Debug)]
 enum Command {
     SetupPubAuth {
         destination: String,
@@ -37,13 +37,20 @@ enum Command {
 fn main() {
     let opt = Opt::from_args();
 
-    Builder::new().filter(None, opt.loglevel).init();
+    fern::Dispatch::new()
+        .level(opt.loglevel)
+        .chain(std::io::stdout())
+        .apply()
+        .unwrap();
 
-    match opt {
-        Opt::SetupPubAuth { destination } => Clusterit::setup_pub_auth(destination),
-        Opt::Apply { config, loglevel } => Clusterit::from_file(config)
+    let res = match opt.cmd {
+        Command::SetupPubAuth { destination } => Clusterit::setup_pub_auth(&destination),
+        Command::Apply { config } => Clusterit::from_file(&config)
             .expect("Failed to load clusterit")
-            .execute()
-            .expect("Execute failed"),
+            .execute(),
+    };
+
+    if let Err(e) = res {
+        error!("{e}");
     }
 }

@@ -1,5 +1,4 @@
 use super::connection::Connection;
-use anyhow::Result;
 
 pub struct Executer {
     connection: Connection,
@@ -10,7 +9,7 @@ impl Executer {
         Executer { connection }
     }
 
-    pub fn install(self, debpkgs: Vec<String>) -> Result<()> {
+    pub fn install(self, debpkgs: Vec<String>) -> Result<(), ()> {
         // NOTE: might not be
         // let r = self.connection.exec("apt-mark showmanual")?;
         // let packages: Vec<&str> = r.split("\n").collect();

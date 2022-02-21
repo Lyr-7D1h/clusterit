@@ -24,8 +24,10 @@ impl Clusterit {
         Ok(Clusterit { config })
     }
 
-    pub fn setup_pub_auth(destination: String) -> Result<(), ClusteritError> {
+    pub fn setup_pub_auth(destination: &str) -> Result<(), ClusteritError> {
         let connection = Connection::connect_to_destination(destination)?;
+
+        Ok(())
     }
 
     pub fn execute(self) -> Result<(), ClusteritError> {
