@@ -1,19 +1,22 @@
 #!/usr/bin/env bash
+#
+# A simple integration test with docker containers
+#
 
 set -e
 
 DOCKER_NAME=clusterit-ssh-test-server
 
-cd "$(dirname "$0")/../test"
+cd "$(dirname "$0")/../tests/docker"
+
 
 docker build -t $DOCKER_NAME .
-
 docker stop $DOCKER_NAME || true
-
 docker run -dit --rm --hostname raspberrypi --name $DOCKER_NAME -p 8000:22 $DOCKER_NAME
 
-cd ..
+cd ../..
 
-cargo run -- --config ./test/config.toml --log-level debug
+cargo run -- setup-pub-auth 0.0.0.0
+cargo run -- apply --config ./config.example.toml --log-level debug
 
 docker stop $DOCKER_NAME 

@@ -1,0 +1,11 @@
+ip = "0.0.0.0"
+user = "test"
+password = "test"
+port = 8000
+
+[deb]
+packages = ["dnsutils", "neovim"] 
+
+[[file]]
+destination = "/tmp/test"
+content = "This is a test"

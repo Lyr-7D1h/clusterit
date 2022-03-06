@@ -20,9 +20,8 @@ struct Opt {
 
 #[derive(StructOpt, Debug)]
 enum Command {
-    SetupPubAuth {
-        destination: String,
-    },
+    #[structopt(help = "asdf")]
+    SetupPubAuth { destination: String },
     Apply {
         #[structopt(
             short = "c",

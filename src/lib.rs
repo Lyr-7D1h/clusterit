@@ -1,4 +1,4 @@
 mod clusterit;
 
-pub use clusterit::config::Config;
-pub use clusterit::Clusterit;
+pub use crate::clusterit::config::Config;
+pub use crate::clusterit::Clusterit;
