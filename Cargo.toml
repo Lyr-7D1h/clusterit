@@ -17,6 +17,7 @@ toml = "0.5.8"
 log = "0.4"
 fern = "0.6.0"
 
-ssh = "0.1.4"
+# Embed own openssl version in binary using vendored-openssl
+ssh2 = { version = "0.9.3", features = ["vendored-openssl"] }
 
 regex = "1"

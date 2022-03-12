@@ -20,8 +20,6 @@ struct Opt {
 
 #[derive(StructOpt, Debug)]
 enum Command {
-    #[structopt(help = "asdf")]
-    SetupPubAuth { destination: String },
     Apply {
         #[structopt(
             short = "c",
@@ -43,7 +41,6 @@ fn main() {
         .unwrap();
 
     let res = match opt.cmd {
-        Command::SetupPubAuth { destination } => Clusterit::setup_pub_auth(&destination),
         Command::Apply { config } => Clusterit::from_file(&config)
             .expect("Failed to load clusterit")
             .execute(),

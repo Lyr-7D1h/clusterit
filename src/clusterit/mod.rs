@@ -6,8 +6,6 @@ mod executer;
 
 use config::Config;
 use connection::Connection;
-use connection::ConnectionError;
-use executer::Executer;
 
 mod error;
 use error::ClusteritError;
@@ -24,14 +22,9 @@ impl Clusterit {
         Ok(Clusterit { config })
     }
 
-    pub fn setup_pub_auth(destination: &str) -> Result<(), ClusteritError> {
-        let connection = Connection::connect_to_destination(destination)?;
-
-        Ok(())
-    }
-
     pub fn execute(self) -> Result<(), ClusteritError> {
-        // let connection = Connection::connect(&mut self, user, password)
+        // TODO pass public and private key from state
+        let connection = Connection::connect_to_destination(&self.config.destination, None, None)?;
         todo!()
     }
 }

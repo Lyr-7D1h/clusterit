@@ -1,7 +1,5 @@
-ip = "0.0.0.0"
-user = "test"
-password = "test"
-port = 8000
+# [user@]hostname or a URI of the form ssh://[user@]hostname[:port.]. If user is empty 'root' will be used.
+destination = "test@0.0.0.0:8000"
 
 [deb]
 packages = ["dnsutils", "neovim"] 

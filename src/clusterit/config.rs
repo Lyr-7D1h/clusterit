@@ -9,10 +9,11 @@ const DEFAULT_CONFIG: &str = include_str!("./default_config.toml");
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
-    pub ip: String,
-    pub user: Option<String>,
-    pub password: Option<String>,
-    pub port: u16,
+    pub destination: String,
+    // pub ip: String,
+    // pub user: Option<String>,
+    // pub password: Option<String>,
+    // pub port: u16,
     // pub modules: Vec<Value>,
 }
 
