@@ -16,7 +16,6 @@ docker run -dit --rm --hostname raspberrypi --name $DOCKER_NAME -p 8000:22 $DOCK
 
 cd ../..
 
-cargo run -- setup-pub-auth 0.0.0.0
 cargo run -- apply --config ./config.example.toml --log-level debug
 
 docker stop $DOCKER_NAME 

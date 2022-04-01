@@ -1,9 +1,10 @@
 use core::time;
 use std::{
+    env::{self, join_paths},
     fs::{self, ReadDir},
     hash::Hash,
     net::TcpStream,
-    path::{Path, PathBuf},
+    path::{self, Path, PathBuf},
     time::SystemTime,
 };
 
@@ -22,8 +23,10 @@ impl KeyboardInteractivePrompt for ConnectionPrompter {
         instructions: &str,
         prompts: &[ssh2::Prompt<'a>],
     ) -> Vec<String> {
+        println!("asdf");
         println!("{prompts:?}");
-        todo!()
+
+        vec!["test".to_string(), "asdf".to_string()]
     }
 }
 
@@ -40,13 +43,21 @@ pub struct ExecResult {
 
 /// Returns most recent (publickey, privatekey)
 fn get_most_recent_keys() -> Option<(PathBuf, PathBuf)> {
-    let files = match fs::read_dir("~/.ssh") {
+    let home_path = match env::var("HOME") {
+        Ok(home_dir) => home_dir,
+        Err(_) => return None,
+    };
+
+    let ssh_path = Path::new(&home_path).join(".ssh");
+
+    let files = match fs::read_dir(&ssh_path) {
         Ok(f) => f,
         Err(_) => return None,
     };
 
-    let mut keys: Option<(PathBuf, PathBuf)> = None;
+    let mut latest_key_set: Option<(PathBuf, PathBuf)> = None;
     let mut latest_modified = SystemTime::UNIX_EPOCH;
+
     for key in files {
         if let Ok(f) = key {
             if let Some(filename) = f.file_name().to_str() {
@@ -55,11 +66,11 @@ fn get_most_recent_keys() -> Option<(PathBuf, PathBuf)> {
                     if let Ok(m) = f.metadata() {
                         if let Ok(m) = m.modified() {
                             if m > latest_modified {
-                                let public = PathBuf::from(format!("{filename}.pub"));
-                                let private = PathBuf::from(filename);
+                                let public = ssh_path.clone().join(format!("{filename}.pub"));
+                                let private = ssh_path.clone().join(filename);
                                 if public.exists() && private.exists() {
                                     latest_modified = m;
-                                    keys = Some((public, private))
+                                    latest_key_set = Some((public, private))
                                 }
                             }
                         }
@@ -69,7 +80,7 @@ fn get_most_recent_keys() -> Option<(PathBuf, PathBuf)> {
         }
     }
 
-    return keys;
+    return latest_key_set;
 }
 
 impl Connection {
@@ -126,7 +137,9 @@ impl Connection {
         if let Err(e) = session.userauth_agent(&user) {
             debug!("Authentication using ssh-agent failed: {e}");
 
+            debug!("{:?}", get_most_recent_keys());
             if let Some((publickey, privatekey)) = get_most_recent_keys() {
+                debug!("Authentication using most recent public/private key");
                 if let Err(e) = session.userauth_hostbased_file(
                     &user,
                     &publickey,
