@@ -51,7 +51,9 @@ name = "clusterit"
 version = "0.0.1"
 dependencies = [
  "fern",
+ "home_path",
  "log",
+ "prompter",
  "regex",
  "serde",
  "ssh2",
@@ -76,6 +78,10 @@ checksum = "6d621efb26863f0e9924c6ac577e8275e5e6b77455db64ffa6c65c904e9e132c"
 dependencies = [
  "unicode-segmentation",
 ]
+
+[[package]]
+name = "home_path"
+version = "0.1.0"
 
 [[package]]
 name = "instant"
@@ -234,6 +240,10 @@ checksum = "f0d8caf72986c1a598726adc988bb5984792ef84f5ee5aa50209145ee8077038"
 dependencies = [
  "unicode-xid",
 ]
+
+[[package]]
+name = "prompter"
+version = "0.1.0"
 
 [[package]]
 name = "quote"

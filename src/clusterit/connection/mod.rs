@@ -13,22 +13,10 @@ use log::debug;
 mod connection_error;
 
 pub use connection_error::ConnectionError;
-use ssh2::{KeyboardInteractivePrompt, Session};
 
-pub struct ConnectionPrompter;
-impl KeyboardInteractivePrompt for ConnectionPrompter {
-    fn prompt<'a>(
-        &mut self,
-        username: &str,
-        instructions: &str,
-        prompts: &[ssh2::Prompt<'a>],
-    ) -> Vec<String> {
-        println!("asdf");
-        println!("{prompts:?}");
-
-        vec!["test".to_string(), "asdf".to_string()]
-    }
-}
+mod authenticate;
+use authenticate::authenticate;
+use ssh2::Session;
 
 pub struct Connection {
     session: Session,
@@ -39,48 +27,6 @@ pub struct ExecResult {
     pub exit_code: i32,
     pub stdout: String,
     pub stderr: String,
-}
-
-/// Returns most recent (publickey, privatekey)
-fn get_most_recent_keys() -> Option<(PathBuf, PathBuf)> {
-    let home_path = match env::var("HOME") {
-        Ok(home_dir) => home_dir,
-        Err(_) => return None,
-    };
-
-    let ssh_path = Path::new(&home_path).join(".ssh");
-
-    let files = match fs::read_dir(&ssh_path) {
-        Ok(f) => f,
-        Err(_) => return None,
-    };
-
-    let mut latest_key_set: Option<(PathBuf, PathBuf)> = None;
-    let mut latest_modified = SystemTime::UNIX_EPOCH;
-
-    for key in files {
-        if let Ok(f) = key {
-            if let Some(filename) = f.file_name().to_str() {
-                let filename = filename.replace(".pub", "");
-                if filename.starts_with("id_") {
-                    if let Ok(m) = f.metadata() {
-                        if let Ok(m) = m.modified() {
-                            if m > latest_modified {
-                                let public = ssh_path.clone().join(format!("{filename}.pub"));
-                                let private = ssh_path.clone().join(filename);
-                                if public.exists() && private.exists() {
-                                    latest_modified = m;
-                                    latest_key_set = Some((public, private))
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return latest_key_set;
 }
 
 impl Connection {
@@ -99,16 +45,15 @@ impl Connection {
             None => destination,
         };
 
-        let mut session = Session::new()?;
-
-        let mut parts = destination.split("@");
-
         let mut user = "root";
 
+        let mut parts = destination.split("@");
         if parts.clone().count() >= 2 {
             user = parts.next().unwrap();
             destination = parts.next().unwrap();
         }
+
+        let mut session = Session::new()?;
 
         debug!("Creating TcpStream to: {destination}");
         let tcp = TcpStream::connect(destination).unwrap();
@@ -118,48 +63,7 @@ impl Connection {
         debug!("Performing handshake");
         session.handshake()?;
 
-        if let Some(publickey) = public_key {
-            if let Some(privatekey) = private_key {
-                debug!("Public and private key given");
-                match session.userauth_pubkey_memory(&user, Some(publickey), privatekey, None) {
-                    Ok(_) => {
-                        if session.authenticated() {
-                            return Ok(Connection { session });
-                        }
-                        debug!("Userauth succeeded but still not authenticated")
-                    }
-                    Err(e) => debug!("Could not connect using most recent pub/private key: {e}"),
-                }
-            }
-        }
-
-        debug!("Authentication using ssh-agent");
-        if let Err(e) = session.userauth_agent(&user) {
-            debug!("Authentication using ssh-agent failed: {e}");
-
-            debug!("{:?}", get_most_recent_keys());
-            if let Some((publickey, privatekey)) = get_most_recent_keys() {
-                debug!("Authentication using most recent public/private key");
-                if let Err(e) = session.userauth_hostbased_file(
-                    &user,
-                    &publickey,
-                    &privatekey,
-                    None,
-                    destination,
-                    None,
-                ) {
-                    debug!("Could not connect using most recent pub/private key: {e}");
-                };
-            }
-
-            session
-                .userauth_keyboard_interactive(&user, &mut ConnectionPrompter {})
-                .unwrap();
-        }
-
-        if !session.authenticated() {
-            return Err(ConnectionError::Other("SSH Could not authenticate"));
-        }
+        authenticate(&session, user, destination, public_key, private_key)?;
 
         Ok(Connection { session })
     }

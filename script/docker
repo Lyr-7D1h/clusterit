@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+#
+# A simple integration test with docker containers
+#
+
+set -e
+
+DOCKER_NAME=clusterit-ssh-test-server
+
+cd "$(dirname "$0")/../tests/docker"
+
+
+docker build -t $DOCKER_NAME .
+docker stop $DOCKER_NAME &>/dev/null || true 
+docker run -dit --rm --hostname raspberrypi --name $DOCKER_NAME -p 7654:22 $DOCKER_NAME
+
+# docker stop $DOCKER_NAME 
