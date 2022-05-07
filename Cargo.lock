@@ -51,8 +51,8 @@ name = "clusterit"
 version = "0.0.1"
 dependencies = [
  "fern",
- "home_path",
  "log",
+ "path",
  "prompter",
  "regex",
  "serde",
@@ -78,10 +78,6 @@ checksum = "6d621efb26863f0e9924c6ac577e8275e5e6b77455db64ffa6c65c904e9e132c"
 dependencies = [
  "unicode-segmentation",
 ]
-
-[[package]]
-name = "home_path"
-version = "0.1.0"
 
 [[package]]
 name = "instant"
@@ -201,6 +197,10 @@ dependencies = [
  "smallvec",
  "winapi",
 ]
+
+[[package]]
+name = "path"
+version = "0.1.0"
 
 [[package]]
 name = "pkg-config"

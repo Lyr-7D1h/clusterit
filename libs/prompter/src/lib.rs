@@ -1,21 +1,28 @@
-use std::io::{self, stdin, Write};
+use std::io::{self, Write};
 
 pub fn input(message: &str, default: Option<&str>) -> Result<Option<String>, io::Error> {
-    println!("{message}");
+    print!("{message}");
 
-    if let Some(default) = default {
-        println!("\\033[2J asdf");
-        print!("{default}\r");
-        io::stdout().flush()?;
+    if let Some(default) = default.clone() {
+        print!(" ({default})");
     }
 
-    let mut buf = String::from(default.unwrap_or(""));
+    print!(": ");
+    io::stdout().flush()?;
+
+    let mut buf = String::new();
 
     io::stdin().read_line(&mut buf)?;
 
     if buf == "\n" {
+        if let Some(default) = default {
+            return Ok(Some(String::from(default)));
+        }
+
         return Ok(None);
     }
+
+    println!("");
 
     return Ok(Some(buf));
 }

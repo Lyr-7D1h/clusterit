@@ -10,7 +10,7 @@ path = "src/main.rs"
 
 [dependencies]
 prompter = { path = "./libs/prompter" }
-home_path = { path = "./libs/home_path" }
+path = { path = "./libs/path" }
 
 structopt = { version = "0.3", default-features = false }
 

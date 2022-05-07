@@ -1,29 +1,25 @@
-use home_path::get_home_path;
+use path::Path;
 use prompter::input;
-use std::{
-    fs,
-    path::{Path, PathBuf},
-    time::SystemTime,
-};
+use std::{default, fs, path::PathBuf, time::SystemTime};
 
 use log::{debug, error};
 use ssh2::Session;
 
 use super::ConnectionError;
 
-/// Returns most recent (publickey, privatekey)
-fn get_most_recent_keys() -> Option<(PathBuf, PathBuf)> {
-    let home_path = get_home_path()?;
-
-    let ssh_path = Path::new(&home_path).join(".ssh");
+fn get_most_recent_private_key() -> Option<Path> {
+    let ssh_path = match Path::resolve("~/.ssh") {
+        Ok(p) => p,
+        Err(_) => return None,
+    };
 
     let files = match fs::read_dir(&ssh_path) {
         Ok(f) => f,
         Err(_) => return None,
     };
 
-    let mut latest_key_set: Option<(PathBuf, PathBuf)> = None;
     let mut latest_modified = SystemTime::UNIX_EPOCH;
+    let mut latest_private = None;
 
     for key in files {
         if let Ok(f) = key {
@@ -33,12 +29,8 @@ fn get_most_recent_keys() -> Option<(PathBuf, PathBuf)> {
                     if let Ok(m) = f.metadata() {
                         if let Ok(m) = m.modified() {
                             if m > latest_modified {
-                                let public = ssh_path.clone().join(format!("{filename}.pub"));
-                                let private = ssh_path.clone().join(filename);
-                                if public.exists() && private.exists() {
-                                    latest_modified = m;
-                                    latest_key_set = Some((public, private))
-                                }
+                                latest_private = Some(ssh_path.clone().join(filename));
+                                latest_modified = m
                             }
                         }
                     }
@@ -47,38 +39,31 @@ fn get_most_recent_keys() -> Option<(PathBuf, PathBuf)> {
         }
     }
 
-    return latest_key_set;
+    return latest_private;
 }
 
-fn get_default_keys() -> Option<(PathBuf, PathBuf)> {
-    let home_path = get_home_path()?;
-    let ssh_path = Path::new(&home_path).join(".ssh");
-
-    return Some((
-        ssh_path.clone().join(format!("id_rsa.pub")),
-        ssh_path.join("id_rsa"),
-    ));
-}
-
-fn get_keys() -> Option<(PathBuf, PathBuf)> {
-    let (mut publickey, mut privatekey) = match get_most_recent_keys() {
-        Some(keys) => keys,
-        None => get_default_keys()?,
-    };
-
-    loop {
-        if let Ok(pk) = input!("Private key", privatekey.to_str()) {
-            match pk {
-                Some(pk) => {
-                    let path = PathBuf::from(pk);
-                    if path.exists() {
-                        break;
-                    }
-                }
-                None => break,
-            }
+fn ask_key(message: &str, key: Option<&str>) -> Path {
+    if let Ok(Some(pk)) = input!(message, key) {
+        match Path::resolve(&pk) {
+            Ok(p) => return p,
+            Err(e) => error!("Invalid key: {e}"),
         }
     }
+
+    return ask_key(message, key);
+}
+
+fn get_keys() -> Option<(Path, Path)> {
+    let default_privatekey = get_most_recent_private_key().map(|p| p.to_string());
+
+    let privatekey = ask_key("Private key", default_privatekey.as_deref());
+
+    let default_publickey = privatekey
+        .clone()
+        .join(format!("../{}.pub", privatekey.filename()))
+        .to_string();
+
+    let publickey = ask_key("Public key", Some(&default_publickey));
 
     todo!()
 }
