@@ -17,7 +17,6 @@ pub struct Clusterit {
 impl Clusterit {
     pub fn from_file(path: &PathBuf) -> Result<Clusterit, ClusteritError> {
         let config = Config::from_file(path)?;
-        println!("{:?}", config);
 
         Ok(Clusterit { config })
     }

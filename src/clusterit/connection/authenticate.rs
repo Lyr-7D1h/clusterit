@@ -1,7 +1,7 @@
 use home_path::get_home_path;
 use prompter::input;
 use std::{
-    env, fs,
+    fs,
     path::{Path, PathBuf},
     time::SystemTime,
 };
@@ -67,7 +67,7 @@ fn get_keys() -> Option<(PathBuf, PathBuf)> {
     };
 
     loop {
-        if let Ok(pk) = input(&format!("Private key ({})", privatekey.to_string_lossy())) {
+        if let Ok(pk) = input!("Private key", privatekey.to_str()) {
             match pk {
                 Some(pk) => {
                     let path = PathBuf::from(pk);

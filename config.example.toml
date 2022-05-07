@@ -1,5 +1,5 @@
 # [user@]hostname or a URI of the form ssh://[user@]hostname[:port.]. If user is empty 'root' will be used.
-destination = "test@0.0.0.0:8000"
+destination = "test@0.0.0.0:7654"
 
 [deb]
 packages = ["dnsutils", "neovim"] 

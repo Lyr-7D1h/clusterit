@@ -1,8 +1,15 @@
-use std::io;
+use std::io::{self, stdin, Write};
 
-pub fn input(message: &str) -> Result<Option<String>, io::Error> {
+pub fn input(message: &str, default: Option<&str>) -> Result<Option<String>, io::Error> {
     println!("{message}");
-    let mut buf = String::new();
+
+    if let Some(default) = default {
+        println!("\\033[2J asdf");
+        print!("{default}\r");
+        io::stdout().flush()?;
+    }
+
+    let mut buf = String::from(default.unwrap_or(""));
 
     io::stdin().read_line(&mut buf)?;
 
@@ -11,4 +18,17 @@ pub fn input(message: &str) -> Result<Option<String>, io::Error> {
     }
 
     return Ok(Some(buf));
+}
+
+#[macro_export]
+macro_rules! input {
+    ($message:expr) => {
+        input(message, None);
+    };
+    ($message:expr, $default:expr) => {
+        input($message, $default);
+    };
+    ($message:expr, $default:expr) => {
+        input($message, Some($default));
+    };
 }
