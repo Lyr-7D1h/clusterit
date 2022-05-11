@@ -52,7 +52,7 @@ version = "0.0.1"
 dependencies = [
  "fern",
  "log",
- "path",
+ "path_resolver",
  "prompter",
  "regex",
  "serde",
@@ -199,7 +199,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "path"
+name = "path_resolver"
 version = "0.1.0"
 
 [[package]]

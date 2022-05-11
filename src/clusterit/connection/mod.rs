@@ -63,7 +63,8 @@ impl Connection {
         debug!("Performing handshake");
         session.handshake()?;
 
-        authenticate(&session, user, destination, public_key, private_key)?;
+        let hostname = destination.split(":").next().unwrap();
+        authenticate(&session, user, hostname, public_key, private_key)?;
 
         Ok(Connection { session })
     }
