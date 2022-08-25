@@ -2,17 +2,7 @@
 
 **Under Development**
 
-Clearly define your servers and let clusterit do its magic.
-It will setup the server to be as close to configuration as possible with minimal overhead and sane defaults.
-This does not require any prerequisites on the server.
-
-A zero-config solution for setting up one big cluster for all your devices.
-
-**Known working Devices**
-
-- Odroid HC4
-- Odroid MC1
-- Raspberry Pi B+
+A docker like solution for setting up, maintaining and configuring servers over ssh.
 
 # Usage
 
@@ -33,21 +23,14 @@ rustup install `cat rust-toolchain`
 cargo run
 ```
 
-## Developing
-
-```bash
-cargo install cargo-watch
-cargo watch -x run
-```
-
 ## Tests
 
-Additional Requirements:
+Requirements:
 
 - docker
 
 ```bash
-./script/test
+cargo test
 ```
 
 # Developing
