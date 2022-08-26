@@ -55,11 +55,10 @@ clusterit sync
 - Create a list of dependencies for every executable used
 - Create a list of dependencies for all arguments used ($1, $2)
 
+
 ```dockerfile
 {execution}
 ARG {name} [default value]
-VAR {name} {value}
-DEP {key} {json value}
 CMD {shell command} 
 COPY {local file path} {remote file path}
 MOD {module name} {args}
@@ -67,24 +66,17 @@ MOD {module name} {args}
 
 Example replace module
 
-// FIXME make replace module safe
 ```dockerfile
 ARG file 
 ARG regex 
 ARG replacement
 
-CMD cat $file
-STATE original_file !!
-
 CMD sed $file -i 's/$regex/$replacement/g'
-
-CMD cat $file
-STATE changed_file !!
-
-FALLBACK
-CMD 
 ```
 
 QUESTIONS
 How to deal with different operating systems?
 	- Each module checks for its executables so if the os doesn't contain it the module will fail 
+How to deal with software updates?
+How to deal with removal of a module?
+	- How to deal with replacement?
