@@ -15,7 +15,7 @@ path_resolver = { path = "./libs/path_resolver" }
 structopt = { version = "0.3", default-features = false }
 
 serde = { version = "1.0.126", features = ["derive"] }
-toml = "0.5.8"
+serde_json = "1.0"
 
 log = "0.4"
 fern = "0.6.0"
