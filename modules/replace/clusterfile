@@ -1,0 +1,5 @@
+ARG file 
+ARG regex 
+ARG replacement
+
+CMD sed $file -i 's/$regex/$replacement/g'
