@@ -77,6 +77,10 @@ CMD sed $file -i 's/$regex/$replacement/g'
 QUESTIONS
 How to deal with different operating systems?
 	- Each module checks for its executables so if the os doesn't contain it the module will fail 
+
 How to deal with software updates?
+
 How to deal with removal of a module?
-	- How to deal with replacement?
+How to deal with host file changes?
+	- A wrapper around each execution that watches for file changes. Like the ABS (https://wiki.archlinux.org/title/Arch_Build_System) probably does it.
+	- Treat every module as an commit with changed files. Have these changes be revertable. Detect changes made to the same line of code and give an error in this case.

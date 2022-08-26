@@ -32,8 +32,7 @@ enum Command {
         #[structopt(help = "Destination to device (ip, hostname)")]
         destination: String,
     },
-    Devices {
-    },
+    Devices {},
     Sync {},
 }
 
