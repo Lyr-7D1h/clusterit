@@ -51,6 +51,14 @@ clusterit sync
 
 ## MODULE (following docker like format)
 
+Requirements:
+- Should have conditions 
+	- if os == "ubuntu"
+	- if command failed
+- Should be able to get input from caller
+- Should be able to track state and changes
+- Should support local file upload and references
+
 - Each state used in 
 - Create a list of dependencies for every executable used
 - Create a list of dependencies for all arguments used ($1, $2)
