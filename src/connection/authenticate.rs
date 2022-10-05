@@ -1,5 +1,5 @@
 use path_resolver::resolve;
-use prompter::{ask_secret, input};
+use prompter::ask_secret;
 use std::fs;
 
 use log::{debug, error};
@@ -45,6 +45,7 @@ fn authenticate_using_keys(session: &Session, user: &str, hostname: &str) -> boo
     return false;
 }
 
+///
 pub fn authenticate(
     session: &Session,
     username: &str,
@@ -75,7 +76,7 @@ pub fn authenticate(
         return Ok(());
     }
 
-    debug!("Authentication using found public and private keys");
+    debug!("Authentication using public and private keys");
     authenticate_using_keys(session, username, hostname);
 
     loop {

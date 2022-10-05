@@ -2,7 +2,7 @@ use log::warn;
 use serde::Deserialize;
 use std::{fs, path::PathBuf};
 
-use crate::state_error::StateError;
+use crate::error::{ClusteritError, ClusteritErrorKind};
 
 #[derive(Deserialize, Debug)]
 pub struct Device {
@@ -17,15 +17,16 @@ pub struct State {
 }
 
 impl State {
-    pub fn from_file(path: &PathBuf) -> Result<State, StateError> {
+    pub fn from_file(path: &PathBuf) -> Result<State, ClusteritError> {
         if !path.is_file() {
             warn!("State file not found, loading empty state file");
             return Ok(State::default());
         }
 
-        let content = fs::read_to_string(path).or(Err(StateError::new(format!(
-            "Could not read config from: {path:?}"
-        ))))?;
+        let content = fs::read_to_string(path).or(Err(ClusteritError::new(
+            ClusteritErrorKind::ParseError,
+            format!("Could not read state from: {path:?}"),
+        )))?;
 
         let state: State = serde_json::from_str(&content)?;
 

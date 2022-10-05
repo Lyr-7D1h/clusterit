@@ -8,7 +8,7 @@ use clusterit::Clusterit;
 #[structopt(
     name = "clusterit",
     author = "Lyr 7d1h",
-    about = "A tool for settings up and managing a k3 cluster."
+    about = "A tool for settings up and managing servers."
 )]
 struct Opt {
     #[structopt(subcommand)]

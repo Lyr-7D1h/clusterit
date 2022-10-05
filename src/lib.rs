@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 pub mod state;
-use state::{State, Device};
+use state::{Device, State};
 
 mod connection;
 use connection::Connection;
@@ -32,6 +32,6 @@ impl Clusterit {
     }
 
     pub fn devices(&self) -> &Vec<Device> {
-        return &self.state.devices
+        return &self.state.devices;
     }
 }

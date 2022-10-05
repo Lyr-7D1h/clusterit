@@ -1,12 +1,12 @@
-use std::io::{self, Write};
+use std::io::{self, Read, Write};
 
 pub fn ask_secret(message: &str) -> Result<String, io::Error> {
-    print!("{message}");
-
-    print!(": ");
+    print!("{message}: ");
     io::stdout().flush()?;
 
     let mut buf = String::new();
+
+    let lock = io::stdin().bytes();
 
     // TODO Dont show input
     io::stdin().read_line(&mut buf)?;
@@ -15,12 +15,12 @@ pub fn ask_secret(message: &str) -> Result<String, io::Error> {
         return Ok(String::new());
     }
 
-    println!("");
+    buf = buf.trim().to_string();
 
     return Ok(buf);
 }
 
-pub fn input(message: &str, default: Option<&str>) -> Result<Option<String>, io::Error> {
+pub fn ask(message: &str, default: Option<&str>) -> Result<Option<String>, io::Error> {
     print!("{message}");
 
     if let Some(default) = default.clone() {
@@ -48,7 +48,7 @@ pub fn input(message: &str, default: Option<&str>) -> Result<Option<String>, io:
 }
 
 #[macro_export]
-macro_rules! input {
+macro_rules! ask {
     ($message:expr) => {
         input($message, None);
     };
