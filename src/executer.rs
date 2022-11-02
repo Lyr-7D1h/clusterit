@@ -1,7 +1,10 @@
+use std::path::PathBuf;
+
 use super::connection::Connection;
 
 pub struct Executer {
     connection: Connection,
+    executable: PathBuf,
 }
 
 impl Executer {

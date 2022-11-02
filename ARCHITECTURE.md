@@ -55,6 +55,7 @@ Requirements:
 - Should have conditions 
 	- if os == "ubuntu"
 	- if command failed
+	- store intermediate values
 - Should be able to get input from caller
 - Should be able to track state and changes
 - Should support local file upload and references
@@ -67,7 +68,7 @@ Requirements:
 ```dockerfile
 {execution}
 ARG {name} [default value]
-CMD {shell command} 
+CMD {remote shell command} 
 COPY {local file path} {remote file path}
 MOD {module name} {args}
 ```

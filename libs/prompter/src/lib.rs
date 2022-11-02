@@ -1,12 +1,10 @@
-use std::io::{self, Read, Write};
+use std::io::{self, Write};
 
 pub fn ask_secret(message: &str) -> Result<String, io::Error> {
     print!("{message}: ");
     io::stdout().flush()?;
 
     let mut buf = String::new();
-
-    let lock = io::stdin().bytes();
 
     // TODO Dont show input
     io::stdin().read_line(&mut buf)?;

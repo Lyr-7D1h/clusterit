@@ -52,6 +52,7 @@ version = "0.0.1"
 dependencies = [
  "fern",
  "log",
+ "parser",
  "path_resolver",
  "prompter",
  "regex",
@@ -203,6 +204,10 @@ dependencies = [
  "smallvec",
  "winapi",
 ]
+
+[[package]]
+name = "parser"
+version = "0.1.0"
 
 [[package]]
 name = "path_resolver"

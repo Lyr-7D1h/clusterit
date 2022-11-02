@@ -11,6 +11,7 @@ path = "src/main.rs"
 [dependencies]
 prompter = { path = "./libs/prompter" }
 path_resolver = { path = "./libs/path_resolver" }
+parser = { path = "./libs/parser" }
 
 structopt = { version = "0.3", default-features = false }
 

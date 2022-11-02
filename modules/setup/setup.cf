@@ -1,0 +1,6 @@
+ARG public_key
+
+CMD export TEMP_DIR=$(mktemp)
+!CMD rm -rf $TEMP_DIR
+COPY $TEMP_DIR/setup.sh  
+CMD $TEMP_DIR/setup.sh $public_key

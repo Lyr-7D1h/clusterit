@@ -5,9 +5,9 @@ use std::fs;
 use log::{debug, error};
 use ssh2::Session;
 
-use super::ConnectionError;
+use super::{ConnectionError, Destination};
 
-fn authenticate_using_keys(session: &Session, user: &str, hostname: &str) -> bool {
+fn authenticate_using_keys(session: &Session, destination: &Destination) -> bool {
     let ssh_path = resolve("~/.ssh");
 
     let files = match fs::read_dir(&ssh_path) {
@@ -25,11 +25,11 @@ fn authenticate_using_keys(session: &Session, user: &str, hostname: &str) -> boo
                     if privatekey.exists() && publickey.exists() {
                         debug!("Authenticating using {privatekey:?}");
                         if let Ok(()) = session.userauth_hostbased_file(
-                            &user,
+                            &destination.username,
                             &publickey,
                             &privatekey,
                             None,
-                            hostname,
+                            &destination.hostname,
                             None,
                         ) {
                             if session.authenticated() {
@@ -45,43 +45,46 @@ fn authenticate_using_keys(session: &Session, user: &str, hostname: &str) -> boo
     return false;
 }
 
-///
 pub fn authenticate(
     session: &Session,
-    username: &str,
-    hostname: &str,
-    public_key: Option<&str>,
-    private_key: Option<&str>,
+    destination: &Destination,
+    public_key: &str,
+    private_key: &str,
 ) -> Result<(), ConnectionError> {
     debug!("Perfoming authentication");
-    if let Some(publickey) = public_key {
-        if let Some(privatekey) = private_key {
-            debug!("Public and private key given");
 
-            if let Err(e) =
-                session.userauth_pubkey_memory(&username, Some(publickey), privatekey, None)
-            {
-                error!("Could not connect with given public and private key: {e}");
-                return authenticate(session, username, hostname, None, None);
-            }
-
-            return Ok(());
-        }
+    if let Err(e) =
+        session.userauth_pubkey_memory(&destination.username, Some(public_key), private_key, None)
+    {
+        error!("Could not connect with given public and private key: {e}");
+        return Err(ConnectionError::Ssh(e));
     }
 
+    return Ok(());
+}
+
+pub fn authenticate_interactive(
+    session: &Session,
+    destination: &Destination,
+) -> Result<(), ConnectionError> {
+    debug!("Perfoming authentication");
+
     debug!("Authentication using ssh-agent");
-    if let Err(e) = session.userauth_agent(&username) {
+    if let Err(e) = session.userauth_agent(&destination.username) {
         debug!("Authentication using ssh-agent failed: {e}");
     } else {
         return Ok(());
     }
 
     debug!("Authentication using public and private keys");
-    authenticate_using_keys(session, username, hostname);
+    authenticate_using_keys(session, destination);
 
     loop {
-        if let Ok(password) = ask_secret(&format!("{username}@{hostname}'s password")) {
-            if let Err(e) = session.userauth_password(username, &password) {
+        if let Ok(password) = ask_secret(&format!(
+            "{}@{}'s password",
+            destination.username, destination.hostname
+        )) {
+            if let Err(e) = session.userauth_password(&destination.username, &password) {
                 error!("{e}");
             } else {
                 // TODO set max of 2 mistakes due to ssh timeout

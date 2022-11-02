@@ -2,13 +2,16 @@ use log::warn;
 use serde::Deserialize;
 use std::{fs, path::PathBuf};
 
-use crate::error::{ClusteritError, ClusteritErrorKind};
+use crate::{
+    error::{ClusteritError, ClusteritErrorKind},
+    Destination,
+};
 
 #[derive(Deserialize, Debug)]
 pub struct Device {
-    pub destination: String,
-    pub ssh_port: u16,
-    pub ssh_key: String,
+    pub destination: Destination,
+    pub public_key: String,
+    pub private_key: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -31,6 +34,17 @@ impl State {
         let state: State = serde_json::from_str(&content)?;
 
         return Ok(state);
+    }
+
+    /// Check if destination already exists
+    pub fn exists(&self, destination: &Destination) -> bool {
+        for device in &self.devices {
+            if device.destination.hostname == destination.hostname {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 

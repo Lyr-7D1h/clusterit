@@ -1,10 +1,12 @@
 use std::path::PathBuf;
 
 pub mod state;
+use error::ClusteritErrorKind;
 use state::{Device, State};
 
 mod connection;
-use connection::Connection;
+pub use connection::Connection;
+pub use connection::Destination;
 
 mod executer;
 
@@ -26,8 +28,14 @@ impl Clusterit {
         todo!()
     }
 
-    pub fn add_device(&self, destination: &String) -> Result<(), ClusteritError> {
-        let connection = Connection::connect_to_destination(&destination, None, None)?;
+    pub fn add_device(&self, destination: &Destination) -> Result<(), ClusteritError> {
+        if self.state.exists(destination) {
+            return Err(ClusteritError::new(
+                ClusteritErrorKind::Generic,
+                "destination already exists",
+            ));
+        }
+        let connection = Connection::connect_interactive(destination)?;
         todo!()
     }
 

@@ -1,8 +1,8 @@
 use log::{error, LevelFilter};
-use std::path::PathBuf;
+use std::{path::PathBuf, str::FromStr};
 use structopt::StructOpt;
 
-use clusterit::Clusterit;
+use clusterit::{Clusterit, Destination};
 
 #[derive(StructOpt, Debug)]
 #[structopt(
@@ -51,7 +51,11 @@ fn main() {
 
     let res = match opt.cmd {
         Command::Sync {} => clusterit.sync(),
-        Command::Add { destination } => clusterit.add_device(&destination),
+        Command::Add { destination } => {
+            let destination =
+                Destination::from_str(&destination).expect("Failed to parse destination");
+            clusterit.add_device(&destination)
+        }
         _ => todo!(),
     };
 

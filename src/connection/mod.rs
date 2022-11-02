@@ -1,14 +1,10 @@
-use core::time;
-use std::{
-    env::{self, join_paths},
-    fs::{self, ReadDir},
-    hash::Hash,
-    net::TcpStream,
-    path::{self, Path, PathBuf},
-    time::SystemTime,
-};
+use std::net::TcpStream;
 
 use log::debug;
+
+mod destination;
+
+pub use destination::Destination;
 
 mod connection_error;
 
@@ -18,40 +14,44 @@ mod authenticate;
 use authenticate::authenticate;
 use ssh2::Session;
 
+use crate::connection::authenticate::authenticate_interactive;
+
 pub struct Connection {
     session: Session,
 }
 
-#[derive(Debug)]
-pub struct ExecResult {
-    pub exit_code: i32,
-    pub stdout: String,
-    pub stderr: String,
-}
+// #[derive(Debug)]
+// pub struct ExecResult {
+//     pub exit_code: i32,
+//     pub stdout: String,
+//     pub stderr: String,
+// }
 
 impl Connection {
+    pub fn connect(
+        destination: &Destination,
+        public_key: &str,
+        private_key: &str,
+    ) -> Result<Connection, ConnectionError> {
+        let mut session = Session::new()?;
+
+        debug!("Creating TcpStream to: {destination}");
+        let tcp = TcpStream::connect(destination).unwrap();
+
+        session.set_tcp_stream(tcp);
+
+        debug!("Performing handshake");
+        session.handshake()?;
+
+        authenticate(&session, destination, public_key, private_key)?;
+
+        Ok(Connection { session })
+    }
     /// Connect using OpenSSH definition of destination (ssh://[user@]hostname[:port.])
     /// If not public or private key found it will try
     /// ssh-agent > most recent key in ~/.ssh > ask user input for password
-    pub fn connect_to_destination(
-        destination: &str,
-        public_key: Option<&str>,
-        private_key: Option<&str>,
-    ) -> Result<Connection, ConnectionError> {
+    pub fn connect_interactive(destination: &Destination) -> Result<Connection, ConnectionError> {
         debug!("Connecting to '{destination}'",);
-
-        let mut destination = match destination.strip_prefix("ssh://") {
-            Some(d) => d,
-            None => destination,
-        };
-
-        let mut user = "root";
-
-        let mut parts = destination.split("@");
-        if parts.clone().count() >= 2 {
-            user = parts.next().unwrap();
-            destination = parts.next().unwrap();
-        }
 
         let mut session = Session::new()?;
 
@@ -63,8 +63,7 @@ impl Connection {
         debug!("Performing handshake");
         session.handshake()?;
 
-        let hostname = destination.split(":").next().unwrap();
-        authenticate(&session, user, hostname, public_key, private_key)?;
+        authenticate_interactive(&session, destination)?;
 
         Ok(Connection { session })
     }
