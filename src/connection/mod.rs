@@ -1,4 +1,4 @@
-use std::net::TcpStream;
+use std::{io::Read, net::TcpStream};
 
 use log::debug;
 
@@ -12,20 +12,14 @@ pub use connection_error::ConnectionError;
 
 mod authenticate;
 use authenticate::authenticate;
-use ssh2::Session;
+use ssh2::{Channel, Session};
 
 use crate::connection::authenticate::authenticate_interactive;
 
 pub struct Connection {
     session: Session,
+    exec_channel: Option<Channel>,
 }
-
-// #[derive(Debug)]
-// pub struct ExecResult {
-//     pub exit_code: i32,
-//     pub stdout: String,
-//     pub stderr: String,
-// }
 
 impl Connection {
     pub fn connect(
@@ -45,8 +39,12 @@ impl Connection {
 
         authenticate(&session, destination, public_key, private_key)?;
 
-        Ok(Connection { session })
+        Ok(Connection {
+            session,
+            exec_channel: None,
+        })
     }
+
     /// Connect using OpenSSH definition of destination (ssh://[user@]hostname[:port.])
     /// If not public or private key found it will try
     /// ssh-agent > most recent key in ~/.ssh > ask user input for password
@@ -65,26 +63,28 @@ impl Connection {
 
         authenticate_interactive(&session, destination)?;
 
-        Ok(Connection { session })
+        Ok(Connection {
+            session,
+            exec_channel: None,
+        })
     }
 
-    // pub fn exec(mut self, command: &str) -> Result<String, ConnectionError> {
-    //     let mut s = match self.exec_channel {
-    //         Some(s) => s,
-    //         None => {
-    //             let mut s = self.session.channel_new()?;
-    //             s.open_session()?;
-    //             s
-    //         }
-    //     };
+    pub fn exec(&mut self, command: &str) -> Result<String, ConnectionError> {
+        let channel = match &mut self.exec_channel {
+            Some(c) => c,
+            None => {
+                self.exec_channel = Some(self.session.channel_session()?);
+                self.exec_channel.as_mut().unwrap()
+            }
+        };
 
-    //     s.request_exec(command.as_bytes()).unwrap();
-    //     s.send_eof().unwrap();
+        channel.exec(command).unwrap();
 
-    //     let mut buf = Vec::new();
-    //     s.stdout().read_to_end(&mut buf).unwrap();
-    //     return Ok(String::from_utf8_lossy(&buf).into_owned());
-    // }
+        let mut buf = String::new();
+        channel.read_to_string(&mut buf)?;
+
+        return Ok(buf);
+    }
 
     pub fn write(mut self) {
         todo!()
@@ -93,23 +93,4 @@ impl Connection {
     pub fn read(mut self) {
         todo!()
     }
-
-    // pub fn exec(&self, command: &str) -> anyhow::Result<ExecResult> {
-    //     let mut channel = self.session.channel_session()?;
-    //     channel.exec(command)?;
-
-    //     let mut stdout = String::new();
-    //     channel.read_to_string(&mut stdout)?;
-
-    //     let mut stderr = String::new();
-    //     channel.stderr().read_to_string(&mut stderr)?;
-
-    //     channel.wait_close()?;
-
-    //     return Ok(ExecResult {
-    //         exit_code: channel.exit_status()?,
-    //         stdout,
-    //         stderr,
-    //     });
-    // }
 }

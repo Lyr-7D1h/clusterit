@@ -1,23 +1,23 @@
-// pub struct FallbackCommand {}
-//
-// pub struct Command {
-//     command: String,
-//     fallback: Option<FallbackCommand>,
-// }
-//
-// pub enum Execution {
-//     Command(Command),
-//     Argument,
-//     Module,
-// }
-//
-// pub struct Step {
-//     executions: Vec<Execution>,
-// }
-//
-// pub struct Module {
-//     steps: Vec<Step>,
-// }
+pub struct FallbackCommand {}
+
+pub struct Command {
+    pub command: String,
+    pub fallback: Option<FallbackCommand>,
+}
+
+pub enum Execution {
+    Command(Command),
+    Argument,
+    Module,
+}
+
+pub struct Step {
+    pub commands: Vec<Command>,
+}
+
+pub struct Module {
+    pub steps: Vec<Step>,
+}
 
 use std::io::BufRead;
 

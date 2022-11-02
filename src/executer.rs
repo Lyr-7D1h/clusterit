@@ -1,26 +1,37 @@
-use std::path::PathBuf;
+use parser::Module;
 
 use super::connection::Connection;
 
+pub struct ExecuterState {
+    step: u32,
+}
+
+impl Default for ExecuterState {
+    fn default() -> Self {
+        ExecuterState { step: 0 }
+    }
+}
+
 pub struct Executer {
     connection: Connection,
-    executable: PathBuf,
+    state: ExecuterState,
 }
 
 impl Executer {
-    pub fn new(connection: Connection) -> Executer {
-        Executer { connection }
+    pub fn from_state(connection: Connection, state: ExecuterState) -> Executer {
+        Executer { connection, state }
     }
 
-    pub fn install(self, debpkgs: Vec<String>) -> Result<(), ()> {
-        // NOTE: might not be
-        // let r = self.connection.exec("apt-mark showmanual")?;
-        // let packages: Vec<&str> = r.split("\n").collect();
+    pub fn new(connection: Connection) -> Executer {
+        let state = ExecuterState::default();
+        Executer { connection, state }
+    }
 
-        // self.connection
-        //     .exec(&format!("apt-get install {}", debpkgs.join(" ")))?;
-
-        // println!("{packages:?}");
-        Ok(())
+    pub fn run(&mut self, module: Module) {
+        for step in module.steps.iter() {
+            for command in step.commands.iter() {
+                self.connection.exec(&command.command);
+            }
+        }
     }
 }
