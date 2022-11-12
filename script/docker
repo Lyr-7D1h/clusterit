@@ -12,6 +12,6 @@ cd "$(dirname "$0")/../tests/docker"
 
 docker build -t $DOCKER_NAME .
 docker stop $DOCKER_NAME &>/dev/null || true 
-docker run -dit --rm --hostname raspberrypi --name $DOCKER_NAME -p 7654:22 $DOCKER_NAME
-
-# docker stop $DOCKER_NAME 
+echo "CTRL + \\ to exit container"
+docker run -it --rm --hostname raspberrypi --name $DOCKER_NAME -p 7654:22 $DOCKER_NAME
+docker stop $DOCKER_NAME 

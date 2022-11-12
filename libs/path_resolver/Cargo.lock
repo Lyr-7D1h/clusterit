@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "path"
+name = "path_resolver"
 version = "0.1.0"

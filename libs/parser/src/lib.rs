@@ -1,3 +1,10 @@
+use std::io::{self, BufRead, ErrorKind};
+
+use crate::parse_arena::{NodeType, ParseArena};
+
+mod error;
+mod parse_arena;
+
 pub struct FallbackCommand {}
 
 pub struct Command {
@@ -19,90 +26,42 @@ pub struct Module {
     pub steps: Vec<Step>,
 }
 
-use std::io::BufRead;
-
-#[derive(Debug)]
-enum NodeType {
-    Module,
-    Step,
-    Expression,
-}
-
-#[derive(Debug)]
-pub struct Node {
-    node_type: NodeType,
-    line: u32,
-    value: Option<String>,
-    children: Vec<Node>,
-}
-
-impl Node {
-    fn add_child(&mut self, child: Node) {
-        self.children.push(child);
-    }
-}
-
-fn get_value(line: &String, start: usize, end: usize) -> String {
-    let bytes = line.chars().skip(start);
-    return bytes.take(end - start).collect();
-}
-
-#[derive(Debug)]
-struct ParseTree {
-    root: Node,
-}
-
-impl ParseTree {
-    fn parse(line: &mut String, mut reader: impl BufRead, parent: &mut Node) {
-        if reader.read_line(line).is_err() {
-            return;
-        }
-
-        let n = match &line[0..3] {
-            "CMD" => Node {
-                node_type: NodeType::Module,
-                line: 0,
-                value: Some(get_value(line, 4, line.len())),
-                children: vec![],
-            },
-            _ => panic!("Invalid execution"),
-        };
-
-        parent.add_child(n);
-
-        line.clear();
-    }
-
-    pub fn from_reader(mut reader: impl BufRead) -> ParseTree {
-        let mut line = &mut String::new();
-
-        let mut root = Node {
-            node_type: NodeType::Module,
-            line: 0,
-            value: None,
-            children: vec![],
-        };
-
-        let mut step = Node {
-            node_type: NodeType::Step,
-            line: 0,
-            value: None,
-            children: vec![],
-        };
-
-        ParseTree::parse(&mut line, reader, &mut step);
-
-        root.add_child(step);
-
-        return ParseTree { root };
-    }
-}
-
 // https://github.com/moby/buildkit/blob/master/frontend/dockerfile/parser/parser.go
-pub fn parse(reader: impl BufRead) {
-    let parse_tree = ParseTree::from_reader(reader);
+/// Parse to an code abstraction of the clusterfile
+pub fn parse(reader: impl BufRead) -> Result<Module, io::Error> {
+    let mut parse_tree = ParseArena::new();
+    parse_tree.parse_from_reader(reader)?;
 
+    let mut steps = vec![];
+    let mut commands = vec![];
+
+    for node in &mut parse_tree.nodes {
+        match node.node_type {
+            NodeType::Module => (),
+            NodeType::Step => commands.clear(),
+            NodeType::Expression => match node.value {
+                Some() => todo!(),
+                None => {
+                    return io::Error::new(
+                        ErrorKind::InvalidData,
+                        format!("expression must have an value"),
+                    )
+                }
+            },
+        }
+        steps.push(Step { commands });
+    }
     println!("{parse_tree:?}");
 
-    todo!()
+    return Ok(Module { steps });
+}
+
+#[test]
+fn test_parse() {
+    let test_clusterfile = "CMD echo $testfile
+CMD ls -al
+
+CMD echo 'second step'";
+
+    parse(test_clusterfile.as_bytes());
 }
