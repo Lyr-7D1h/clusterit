@@ -1,4 +1,4 @@
-use parser::Module;
+// use parser::Module;
 
 use super::connection::Connection;
 
@@ -27,11 +27,11 @@ impl Executer {
         Executer { connection, state }
     }
 
-    pub fn run(&mut self, module: Module) {
-        for step in module.steps.iter() {
-            for command in step.commands.iter() {
-                self.connection.exec(&command.command);
-            }
-        }
-    }
+    // pub fn run(&mut self, module: Module) {
+    //     for step in module.steps.iter() {
+    //         for command in step.commands.iter() {
+    //             self.connection.exec(&command.command);
+    //         }
+    //     }
+    // }
 }

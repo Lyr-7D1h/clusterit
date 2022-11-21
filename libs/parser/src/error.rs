@@ -1,16 +1,32 @@
-use std::fmt::Display;
+use std::{error, fmt::Display, io};
 
-pub struct Error {
-    line: u32,
-    message: String,
+#[derive(Debug)]
+pub enum Error {
+    ParseError { line: u32, message: String },
+    IoError(io::Error),
 }
 
 impl Error {
-    pub fn new() {}
+    pub fn parse_error(line: u32, message: String) -> Error {
+        Error::ParseError { line, message }
+    }
 }
+
+impl error::Error for Error {}
 
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[Line {self.line}]: {message}")
+        match self {
+            Error::ParseError { line, message } => {
+                write!(f, "[Line {}]: {}", line, message)
+            }
+            Error::IoError(e) => e.fmt(f),
+        }
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(e: io::Error) -> Self {
+        Error::IoError(e)
     }
 }
