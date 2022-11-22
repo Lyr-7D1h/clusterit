@@ -14,12 +14,12 @@ impl NodeId {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Node<T> {
     pub parent: Option<NodeId>,
     pub children: Vec<NodeId>,
 
-    pub value: T,
+    pub data: T,
 }
 
 /// Parse Arena using region based memory (https://en.wikipedia.org/wiki/Region-based_memory_management)
@@ -38,6 +38,10 @@ impl<T> ParseArena<T> {
         }
     }
 
+    pub fn count(&self) -> usize {
+        self.nodes.len()
+    }
+
     pub fn last(&self) -> Option<NodeId> {
         let length = self.nodes.len();
         if length == 0 {
@@ -45,6 +49,17 @@ impl<T> ParseArena<T> {
         }
 
         Some(NodeId::new(length - 1))
+    }
+
+    pub fn root(&self) -> Option<&Node<T>> {
+        if let Some(mut root) = self.nodes.first() {
+            while let Some(parent) = root.parent {
+                root = self.get_node(&parent);
+            }
+
+            return Some(root);
+        }
+        return None;
     }
 
     /// Append another parse arena to the current with, returns start and end NodeIds
@@ -65,7 +80,7 @@ impl<T> ParseArena<T> {
             parent: None,
             children: vec![],
 
-            value,
+            data: value,
         };
         self.nodes.push(node);
 
@@ -93,12 +108,8 @@ impl<T: Display + Debug> Display for ParseArena<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut representation = vec![];
 
-        if let Some(mut root) = self.nodes.first() {
-            while let Some(parent) = root.parent {
-                root = self.get_node(&parent);
-            }
-
-            representation.push(format!("{}", root.value));
+        if let Some(root) = self.root() {
+            representation.push(format!("{}", root.data));
 
             let level: u32 = 1;
             let leveled_children = root
@@ -111,7 +122,7 @@ impl<T: Display + Debug> Display for ParseArena<T> {
 
             while let Some((level, child)) = queue.pop_front() {
                 let child = self.get_node(&child);
-                representation.push(format!("{}{}", "\t".repeat(level as usize), child.value));
+                representation.push(format!("{}{}", "\t".repeat(level as usize), child.data));
 
                 let leveled_children = child
                     .children

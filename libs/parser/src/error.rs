@@ -10,6 +10,13 @@ impl Error {
     pub fn parse_error(line: u32, message: String) -> Error {
         Error::ParseError { line, message }
     }
+
+    pub fn io_error<E: Into<Box<dyn error::Error + Send + Sync>>>(
+        kind: io::ErrorKind,
+        error: E,
+    ) -> Error {
+        Error::IoError(io::Error::new(kind, error))
+    }
 }
 
 impl error::Error for Error {}
