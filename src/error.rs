@@ -21,7 +21,10 @@ impl ClusteritError {
         kind: ClusteritErrorKind,
         error: E,
     ) -> ClusteritError {
-        ClusteritError { kind, error: error.into() }
+        ClusteritError {
+            kind,
+            error: error.into(),
+        }
     }
 }
 
@@ -36,6 +39,12 @@ impl fmt::Display for ClusteritError {
                 write!(f, "Something went wrong: {}", self.error.to_string())
             }
         }
+    }
+}
+
+impl From<parser::Error> for ClusteritError {
+    fn from(e: parser::Error) -> Self {
+        ClusteritError::new(ClusteritErrorKind::ParseError, Box::new(e))
     }
 }
 

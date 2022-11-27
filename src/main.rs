@@ -14,32 +14,31 @@ struct Opt {
     #[structopt(subcommand)]
     cmd: Command,
 
-    #[structopt(
-        short = "s",
-        long = "state",
-        help = "Path to state file",
-        default_value = "state.json"
-    )]
-    state: PathBuf,
-
+    // #[structopt(
+    //     short = "s",
+    //     long = "state",
+    //     help = "Path to state file",
+    //     default_value = "state.json"
+    // )]
+    // state: PathBuf,
     #[structopt(long = "log-level", global = true, default_value = "warn", possible_values(&["debug", "info", "warn", "error"]))]
     loglevel: LevelFilter,
 }
 
 #[derive(StructOpt, Debug)]
 enum Command {
-    Add {
+    Apply {
+        #[structopt(help = "The clusterit module you want to run on the machine")]
+        module: String,
+
         #[structopt(help = "Destination to device (ip, hostname)")]
         destination: String,
     },
-    Devices {},
-    Sync {},
 }
 
 fn main() {
     let opt = Opt::from_args();
     let loglevel = opt.loglevel;
-    let statefile = opt.state;
 
     fern::Dispatch::new()
         .level(loglevel)

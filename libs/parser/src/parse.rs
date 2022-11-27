@@ -85,7 +85,7 @@ impl Display for NodeData {
 
 /// Parse a single clusterfile line and add corresponding nodes
 fn parse_line(
-    cwd: &PathBuf,
+    cwd: &Path,
     arena: &mut ParseArena<NodeData>,
     parent: NodeId,
     lineno: u32,
@@ -116,9 +116,8 @@ fn parse_line(
         )),
         "mod" => {
             let filename = get_value(line, 4, line.len());
-            let mut path = cwd.clone();
-            path.push(filename);
-            let mod_arena = parse(path)?;
+            let mut path = cwd.join(filename);
+            let mod_arena = parse(&path)?;
             let (start, _) = arena.append(mod_arena);
             start
         }
@@ -146,7 +145,7 @@ fn parse_line(
 /// Parse the structure of a cluterfile to a list of nodes
 pub fn parse_from_reader(
     mut reader: impl BufRead,
-    cwd: PathBuf,
+    cwd: &Path,
     module_name: String,
 ) -> Result<ParseArena<NodeData>, Error> {
     let mut arena = ParseArena::new();
@@ -200,7 +199,7 @@ pub fn parse_from_reader(
 }
 
 /// Parse the structure of a cluterfile to a list of nodes
-pub fn parse(path: PathBuf) -> Result<ParseArena<NodeData>, Error> {
+pub fn parse(path: &Path) -> Result<ParseArena<NodeData>, Error> {
     let cwd = path.parent().unwrap_or(Path::new("/"));
     let filename = match path.file_name() {
         Some(f) => f,
@@ -214,11 +213,7 @@ pub fn parse(path: PathBuf) -> Result<ParseArena<NodeData>, Error> {
 
     let f = File::open(&path)?;
     let reader = BufReader::new(f);
-    return parse_from_reader(
-        reader,
-        cwd.to_path_buf(),
-        filename.to_string_lossy().to_string(),
-    );
+    return parse_from_reader(reader, cwd, filename.to_string_lossy().to_string());
 }
 
 #[test]
@@ -244,7 +239,7 @@ cmd echo 'second step'
 
     let arena = parse_from_reader(
         test_clusterfile.as_bytes(),
-        PathBuf::from_str("/tmp").unwrap(),
+        Path::new("/tmp"),
         "test".into(),
     )
     .unwrap();

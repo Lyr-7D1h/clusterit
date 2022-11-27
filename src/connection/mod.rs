@@ -3,29 +3,27 @@ use std::{io::Read, net::TcpStream};
 use log::debug;
 
 mod destination;
-
 pub use destination::Destination;
 
 mod connection_error;
-
 pub use connection_error::ConnectionError;
 
 mod authenticate;
-use authenticate::authenticate;
-use ssh2::{Channel, Session};
+pub use authenticate::Authentication;
+use authenticate::{authenticate, authenticate_interactive};
 
-use crate::connection::authenticate::authenticate_interactive;
+use ssh2::{Channel, Session};
 
 pub struct Connection {
     session: Session,
     exec_channel: Option<Channel>,
+    authentication: Authentication,
 }
 
 impl Connection {
     pub fn connect(
         destination: &Destination,
-        public_key: &str,
-        private_key: &str,
+        authentication: Authentication,
     ) -> Result<Connection, ConnectionError> {
         let mut session = Session::new()?;
 
@@ -37,10 +35,11 @@ impl Connection {
         debug!("Performing handshake");
         session.handshake()?;
 
-        authenticate(&session, destination, public_key, private_key)?;
+        authenticate(&session, destination, &authentication)?;
 
         Ok(Connection {
             session,
+            authentication,
             exec_channel: None,
         })
     }
@@ -61,10 +60,11 @@ impl Connection {
         debug!("Performing handshake");
         session.handshake()?;
 
-        authenticate_interactive(&session, destination)?;
+        let authentication = authenticate_interactive(&session, destination)?;
 
         Ok(Connection {
             session,
+            authentication,
             exec_channel: None,
         })
     }

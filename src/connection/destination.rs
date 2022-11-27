@@ -9,6 +9,7 @@ use serde::Deserialize;
 
 use super::ConnectionError;
 
+/// Code representation of OpenSSH definition of a destination (ssh://[user@]hostname[:port.])
 #[derive(Debug, Deserialize)]
 pub struct Destination {
     pub hostname: String,

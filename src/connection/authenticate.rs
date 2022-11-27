@@ -1,18 +1,95 @@
 use path_resolver::resolve;
 use prompter::ask_secret;
-use std::fs;
+use serde::Deserialize;
+use std::{
+    fs::{self, read_to_string},
+    io,
+};
 
-use log::{debug, error};
+use log::{debug, error, warn};
 use ssh2::Session;
 
 use super::{ConnectionError, Destination};
 
-fn authenticate_using_keys(session: &Session, destination: &Destination) -> bool {
+// TODO check for encrypted keys too
+#[derive(Deserialize, Debug)]
+pub enum Authentication {
+    Keys {
+        public_key: String,
+        private_key: String,
+    },
+    Password(String),
+}
+
+// TODO find way to save ssh_agent credentials
+// pub fn authenticate_using_ssh_agent(
+//     session: &Session,
+//     destination: &Destination,
+// ) -> Result<Authentication, ConnectionError> {
+//     let mut agent = session.agent()?;
+//     agent.connect()?;
+//     agent.list_identities()?;
+//     let identities = agent.identities()?;
+//     let identity = match identities.get(0) {
+//         Some(identity) => identity,
+//         None => {
+//             return Err(ConnectionError::Ssh(Error::new(
+//                 ErrorCode::Session(-34), // LIBSSH2_ERROR_INVAL
+//                 "no identities found in the ssh agent",
+//             )))
+//         }
+//     };
+//     agent.userauth(username, &identity)
+//
+//     return Ok()
+// }
+
+pub fn authenticate(
+    session: &Session,
+    destination: &Destination,
+    authentication: &Authentication,
+) -> Result<(), ConnectionError> {
+    debug!("Perfoming key authentication");
+
+    match authentication {
+        Authentication::Keys {
+            public_key,
+            private_key,
+        } => {
+            if let Err(e) = session.userauth_pubkey_memory(
+                &destination.username,
+                Some(&public_key),
+                &private_key,
+                None,
+            ) {
+                error!("Could not connect with given public and private key: {e}");
+                return Err(ConnectionError::Ssh(e));
+            }
+        }
+        Authentication::Password(password) => {
+            if let Err(e) = session.userauth_password(&destination.username, password) {
+                error!("Could not connect with given public and private key: {e}");
+                return Err(ConnectionError::Ssh(e));
+            }
+        }
+    }
+
+    return Ok(());
+}
+
+/// Authenticate for every public and private key pair found in ~/.ssh
+fn authenticate_using_stored_keys(
+    session: &Session,
+    destination: &Destination,
+) -> Result<Option<Authentication>, io::Error> {
     let ssh_path = resolve("~/.ssh");
 
     let files = match fs::read_dir(&ssh_path) {
         Ok(f) => f,
-        Err(_) => return false,
+        Err(e) => {
+            error!("Could not read ~/.ssh");
+            return Err(e);
+        }
     };
 
     for key in files {
@@ -33,7 +110,10 @@ fn authenticate_using_keys(session: &Session, destination: &Destination) -> bool
                             None,
                         ) {
                             if session.authenticated() {
-                                return true;
+                                return Ok(Some(Authentication::Keys {
+                                    public_key: read_to_string(publickey)?,
+                                    private_key: read_to_string(privatekey)?,
+                                }));
                             }
                         }
                     }
@@ -42,43 +122,37 @@ fn authenticate_using_keys(session: &Session, destination: &Destination) -> bool
         }
     }
 
-    return false;
-}
-
-pub fn authenticate(
-    session: &Session,
-    destination: &Destination,
-    public_key: &str,
-    private_key: &str,
-) -> Result<(), ConnectionError> {
-    debug!("Perfoming authentication");
-
-    if let Err(e) =
-        session.userauth_pubkey_memory(&destination.username, Some(public_key), private_key, None)
-    {
-        error!("Could not connect with given public and private key: {e}");
-        return Err(ConnectionError::Ssh(e));
-    }
-
-    return Ok(());
+    return Ok(None);
 }
 
 pub fn authenticate_interactive(
     session: &Session,
     destination: &Destination,
-) -> Result<(), ConnectionError> {
+) -> Result<Authentication, ConnectionError> {
     debug!("Perfoming authentication");
 
-    debug!("Authentication using ssh-agent");
-    if let Err(e) = session.userauth_agent(&destination.username) {
-        debug!("Authentication using ssh-agent failed: {e}");
-    } else {
-        return Ok(());
-    }
+    // TODO find way to save user agent credentials
+    // debug!("Authentication using ssh-agent");
+    // if let Err(e) = session.userauth_agent(&destination.username) {
+    //     debug!("Authentication using ssh-agent failed: {e}");
+    // } else {
+    //     return Ok(());
+    // }
 
     debug!("Authentication using public and private keys");
-    authenticate_using_keys(session, destination);
+    match authenticate_using_stored_keys(session, destination) {
+        Ok(authentication) => match authentication {
+            Some(authentication) => return Ok(authentication),
+            None => {
+                debug!("No working public or privatekey found")
+            }
+        },
+        Err(e) => {
+            warn!("Could not read keys in: {e}")
+        }
+    }
 
+    let mut password: String;
     loop {
         if let Ok(password) = ask_secret(&format!(
             "{}@{}'s password",
@@ -97,5 +171,5 @@ pub fn authenticate_interactive(
         return Err(ConnectionError::Other("SSH Could not authenticate"));
     }
 
-    return Ok(());
+    return Ok(Authentication::Password(password));
 }

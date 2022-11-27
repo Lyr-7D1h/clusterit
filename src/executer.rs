@@ -1,7 +1,11 @@
 // use parser::Module;
 
+use parser::Module;
+use serde::{Deserialize, Serialize};
+
 use super::connection::Connection;
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ExecuterState {
     step: u32,
 }
@@ -27,11 +31,11 @@ impl Executer {
         Executer { connection, state }
     }
 
-    // pub fn run(&mut self, module: Module) {
-    //     for step in module.steps.iter() {
-    //         for command in step.commands.iter() {
-    //             self.connection.exec(&command.command);
-    //         }
-    //     }
-    // }
+    pub fn run(&mut self, module: Module) {
+        for step in module.steps.iter() {
+            for command in step.commands.iter() {
+                self.connection.exec(&command.command);
+            }
+        }
+    }
 }

@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 
 use crate::{error::Error, parse::parse, parse_arena::ParseArena};
 
@@ -27,7 +27,7 @@ pub struct Module {
 
 impl Module {
     /// Will parse and validate everything that is in the ParseArena
-    pub fn new(file_path: PathBuf, arguments: Vec<String>) -> Result<Module, Error> {
+    pub fn new(file_path: &Path, arguments: Vec<String>) -> Result<Module, Error> {
         let arena = parse(file_path)?;
 
         let root = arena.root().expect("no root found");

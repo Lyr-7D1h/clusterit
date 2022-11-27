@@ -1,7 +1,10 @@
+use std::path::Path;
 use std::path::PathBuf;
 
 pub mod state;
-use error::ClusteritErrorKind;
+use executer::Executer;
+use log::error;
+use parser::Module;
 use state::{Device, State};
 
 mod connection;
@@ -24,19 +27,30 @@ impl Clusterit {
         Ok(Clusterit { state })
     }
 
-    pub fn sync(&self) -> Result<(), ClusteritError> {
-        todo!()
-    }
+    pub fn apply(
+        &self,
+        module_path: &Path,
+        destination: &Destination,
+        arguments: Vec<String>,
+    ) -> Result<(), ClusteritError> {
+        let module = Module::new(module_path, arguments)?;
 
-    pub fn add_device(&self, destination: &Destination) -> Result<(), ClusteritError> {
-        if self.state.exists(destination) {
-            return Err(ClusteritError::new(
-                ClusteritErrorKind::Generic,
-                "destination already exists",
-            ));
-        }
-        let connection = Connection::connect_interactive(destination)?;
-        todo!()
+        let device = self.state.get_device(destination);
+        let connection = if let Some(device) = device {
+            match Connection::connect(destination, device.authentication) {
+                Ok(c) => c,
+                Err(_) => {
+                    error!("Could not log into device with saved credentials.");
+                    Connection::connect_interactive(destination)?
+                }
+            }
+        } else {
+            Connection::connect_interactive(destination)?
+        };
+
+        let executer = Executer::from_state(connection, self.state);
+
+        return Ok(());
     }
 
     pub fn devices(&self) -> &Vec<Device> {

@@ -3,15 +3,17 @@ use serde::Deserialize;
 use std::{fs, path::PathBuf};
 
 use crate::{
+    connection::Authentication,
     error::{ClusteritError, ClusteritErrorKind},
+    executer::ExecuterState,
     Destination,
 };
 
 #[derive(Deserialize, Debug)]
 pub struct Device {
     pub destination: Destination,
-    pub public_key: String,
-    pub private_key: String,
+    pub authentication: Authentication,
+    pub executor_state: ExecuterState,
 }
 
 #[derive(Deserialize, Debug)]
@@ -36,22 +38,30 @@ impl State {
         return Ok(state);
     }
 
-    /// Check if destination already exists
-    pub fn exists(&self, destination: &Destination) -> bool {
-        for device in &self.devices {
-            if device.destination.hostname == destination.hostname {
-                return true;
-            }
-        }
+    pub fn add_device(
+        &mut self,
+        destination: Destination,
+        authentication: Authentication,
+        executor_state: ExecuterState,
+    ) -> &Device {
+        let device = Device {
+            destination,
+            authentication,
+            executor_state,
+        };
+        self.devices.push(device);
+        return &device;
+    }
 
-        return false;
+    pub fn get_device(&self, destination: &Destination) -> Option<&Device> {
+        self.devices
+            .iter()
+            .find(|d| d.destination.hostname == destination.hostname)
     }
 }
 
 impl Default for State {
     fn default() -> Self {
-        Self {
-            devices: Default::default(),
-        }
+        Self { devices: vec![] }
     }
 }
