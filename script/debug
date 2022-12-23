@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+cd "$(dirname "$0")/.."
+
+cargo build 
+
+echo "Cheatsheet: https://darkdust.net/files/GDB%20Cheat%20Sheet.pdf"
+echo "<CTRL-D> to exit"
+rust-gdb --args target/debug/clusterit apply ./modules/test/test.cf test@localhost:7654 --log-level debug 

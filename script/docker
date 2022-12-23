@@ -7,7 +7,7 @@ set -e
 
 DOCKER_NAME=clusterit-ssh-test-server
 
-cd "$(dirname "$0")/../tests/docker"
+cd "$(dirname "$0")"
 
 
 docker build -t $DOCKER_NAME .

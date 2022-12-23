@@ -1,0 +1,7 @@
+cmd echo $1
+cmd ls -al
+cmd mkdir asdf
+fmd rm -rf asdf
+
+
+cmd echo

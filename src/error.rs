@@ -1,5 +1,5 @@
 use core::fmt;
-use std::error;
+use std::{error, io};
 
 use super::connection::ConnectionError;
 
@@ -8,6 +8,7 @@ pub enum ClusteritErrorKind {
     Generic,
     ConnectionError,
     ParseError,
+    IoError,
 }
 
 #[derive(Debug)]
@@ -32,6 +33,9 @@ impl fmt::Display for ClusteritError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.kind {
             ClusteritErrorKind::ParseError => {
+                write!(f, "Io error: {}", self.error.to_string())
+            }
+            ClusteritErrorKind::IoError => {
                 write!(f, "Failed to parse: {}", self.error.to_string())
             }
             ClusteritErrorKind::ConnectionError => self.error.fmt(f),
@@ -53,6 +57,12 @@ impl error::Error for ClusteritError {}
 impl From<ConnectionError> for ClusteritError {
     fn from(e: ConnectionError) -> Self {
         ClusteritError::new(ClusteritErrorKind::ConnectionError, Box::new(e))
+    }
+}
+
+impl From<io::Error> for ClusteritError {
+    fn from(e: io::Error) -> Self {
+        ClusteritError::new(ClusteritErrorKind::IoError, Box::new(e))
     }
 }
 

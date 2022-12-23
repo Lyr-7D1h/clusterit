@@ -17,13 +17,13 @@ use ssh2::{Channel, Session};
 pub struct Connection {
     session: Session,
     exec_channel: Option<Channel>,
-    authentication: Authentication,
 }
 
 impl Connection {
+    /// Connect using libssh2 with the given authentication method
     pub fn connect(
         destination: &Destination,
-        authentication: Authentication,
+        authentication: &Authentication,
     ) -> Result<Connection, ConnectionError> {
         let mut session = Session::new()?;
 
@@ -39,15 +39,15 @@ impl Connection {
 
         Ok(Connection {
             session,
-            authentication,
             exec_channel: None,
         })
     }
 
-    /// Connect using OpenSSH definition of destination (ssh://[user@]hostname[:port.])
-    /// If not public or private key found it will try
-    /// ssh-agent > most recent key in ~/.ssh > ask user input for password
-    pub fn connect_interactive(destination: &Destination) -> Result<Connection, ConnectionError> {
+    /// Connect using libssh2 trying to get the key in an automated way or will ask for the key
+    /// path as fallback.
+    pub fn connect_interactive(
+        destination: &Destination,
+    ) -> Result<(Connection, Authentication), ConnectionError> {
         debug!("Connecting to '{destination}'",);
 
         let mut session = Session::new()?;
@@ -62,13 +62,16 @@ impl Connection {
 
         let authentication = authenticate_interactive(&session, destination)?;
 
-        Ok(Connection {
-            session,
+        Ok((
+            Connection {
+                session,
+                exec_channel: None,
+            },
             authentication,
-            exec_channel: None,
-        })
+        ))
     }
 
+    /// Execute a command on the given connection
     pub fn exec(&mut self, command: &str) -> Result<String, ConnectionError> {
         let channel = match &mut self.exec_channel {
             Some(c) => c,

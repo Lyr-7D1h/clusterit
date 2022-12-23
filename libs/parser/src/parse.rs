@@ -13,7 +13,7 @@ use crate::{
     parse_arena::{NodeId, ParseArena},
 };
 
-/// Get a value safely from start to finish
+/// Get a value safely from start to end
 fn get_value<T: Into<String>>(value: T, start: usize, end: usize) -> String {
     let value: Vec<char> = value.into().chars().collect();
     let len = value.len();
@@ -116,7 +116,7 @@ fn parse_line(
         )),
         "mod" => {
             let filename = get_value(line, 4, line.len());
-            let mut path = cwd.join(filename);
+            let path = cwd.join(filename);
             let mod_arena = parse(&path)?;
             let (start, _) = arena.append(mod_arena);
             start
