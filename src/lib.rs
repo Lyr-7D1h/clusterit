@@ -2,14 +2,17 @@ use std::path::Path;
 use std::path::PathBuf;
 
 pub mod state;
-use executer::Executer;
-use log::error;
+use executer::ExecuterState;
+use log::debug;
 use parser::Module;
-use state::{Device, State};
+use state::State;
 
 mod connection;
 pub use connection::Connection;
 pub use connection::Destination;
+
+mod device;
+use device::Device;
 
 mod executer;
 
@@ -28,32 +31,30 @@ impl Clusterit {
     }
 
     pub fn apply(
-        &self,
+        &mut self,
         module_path: &Path,
-        destination: &Destination,
+        destination: Destination,
         arguments: Vec<String>,
     ) -> Result<(), ClusteritError> {
+        debug!("Parsing module: {module_path:?}");
         let module = Module::new(module_path, arguments)?;
 
-        let device = self.state.get_device(destination);
-        let connection = if let Some(device) = device {
-            match Connection::connect(destination, device.authentication) {
-                Ok(c) => c,
-                Err(_) => {
-                    error!("Could not log into device with saved credentials.");
-                    Connection::connect_interactive(destination)?
-                }
+        match self.state.get_device(&destination) {
+            Some(device) => {
+                debug!("Found device");
+                device.run(module)?;
             }
-        } else {
-            Connection::connect_interactive(destination)?
+            None => {
+                debug!("No existing device found");
+                let device = Device::new(destination, None, ExecuterState::default());
+                self.state.add_device(device);
+            }
         };
-
-        let executer = Executer::from_state(connection, self.state);
 
         return Ok(());
     }
 
     pub fn devices(&self) -> &Vec<Device> {
-        return &self.state.devices;
+        return self.state.devices();
     }
 }

@@ -1,31 +1,42 @@
-use log::warn;
-use serde::Deserialize;
-use std::{fs, path::PathBuf};
+use log::{warn, debug};
+use path_resolver::resolve_path;
+use serde::{Deserialize, Serialize};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use crate::{
-    connection::Authentication,
+    device::Device,
     error::{ClusteritError, ClusteritErrorKind},
-    executer::ExecuterState,
     Destination,
 };
 
-#[derive(Deserialize, Debug)]
-pub struct Device {
-    pub destination: Destination,
-    pub authentication: Authentication,
-    pub executor_state: ExecuterState,
+#[derive(Serialize, Deserialize, Debug)]
+struct InnerState {
+    devices: Vec<Device>,
 }
 
-#[derive(Deserialize, Debug)]
+impl Default for InnerState {
+    fn default() -> Self {
+        Self { devices: vec![] }
+    }
+}
+
+#[derive(Debug)]
 pub struct State {
-    pub devices: Vec<Device>,
+    inner_state: InnerState,
+    path: PathBuf,
 }
 
 impl State {
-    pub fn from_file(path: &PathBuf) -> Result<State, ClusteritError> {
+    pub fn from_file(path: &Path) -> Result<State, ClusteritError> {
         if !path.is_file() {
             warn!("State file not found, loading empty state file");
-            return Ok(State::default());
+            return Ok(State {
+                inner_state: InnerState::default(),
+                path: resolve_path(path),
+            });
         }
 
         let content = fs::read_to_string(path).or(Err(ClusteritError::new(
@@ -33,35 +44,36 @@ impl State {
             format!("Could not read state from: {path:?}"),
         )))?;
 
-        let state: State = serde_json::from_str(&content)?;
+        let inner_state: InnerState = serde_json::from_str(&content)?;
 
-        return Ok(state);
+        return Ok(State {
+            inner_state,
+            path: path.to_path_buf(),
+        });
     }
 
-    pub fn add_device(
-        &mut self,
-        destination: Destination,
-        authentication: Authentication,
-        executor_state: ExecuterState,
-    ) -> &Device {
-        let device = Device {
-            destination,
-            authentication,
-            executor_state,
-        };
-        self.devices.push(device);
-        return &device;
+    pub fn save(&self) -> Result<(), ClusteritError> {
+        fs::write(&self.path, serde_json::to_string(&self.inner_state)?)?;
+
+        return Ok(());
     }
 
-    pub fn get_device(&self, destination: &Destination) -> Option<&Device> {
-        self.devices
-            .iter()
+    pub fn add_device(&mut self, device: Device) {
+        debug!(
+            "Adding device tot state with destination: {}",
+            device.destination
+        );
+        self.inner_state.devices.push(device);
+    }
+
+    pub fn devices(&self) -> &Vec<Device> {
+        &self.inner_state.devices
+    }
+
+    pub fn get_device(&mut self, destination: &Destination) -> Option<&mut Device> {
+        self.inner_state
+            .devices
+            .iter_mut()
             .find(|d| d.destination.hostname == destination.hostname)
-    }
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self { devices: vec![] }
     }
 }

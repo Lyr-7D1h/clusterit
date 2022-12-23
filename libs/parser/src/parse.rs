@@ -116,7 +116,7 @@ fn parse_line(
         )),
         "mod" => {
             let filename = get_value(line, 4, line.len());
-            let mut path = cwd.join(filename);
+            let path = cwd.join(filename);
             let mod_arena = parse(&path)?;
             let (start, _) = arena.append(mod_arena);
             start

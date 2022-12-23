@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub fn resolve<S: AsRef<Path>>(path: S) -> PathBuf {
+pub fn resolve_path<S: AsRef<Path>>(path: S) -> PathBuf {
     let path = path.as_ref().to_str().unwrap();
 
     if path.starts_with("~") {

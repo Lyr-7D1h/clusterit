@@ -1,6 +1,6 @@
-use std::path::{PathBuf, Path};
+use std::path::Path;
 
-use crate::{error::Error, parse::parse, parse_arena::ParseArena};
+use crate::{error::Error, parse::parse};
 
 pub struct FallbackCommand {
     pub command: String,
@@ -15,6 +15,7 @@ pub enum Expression {
     Module(Module),
     Command(Command),
 }
+
 pub struct Step {
     pub commands: Vec<Command>,
 }

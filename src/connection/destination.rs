@@ -5,12 +5,12 @@ use std::{
     vec,
 };
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use super::ConnectionError;
 
 /// Code representation of OpenSSH definition of a destination (ssh://[user@]hostname[:port.])
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Destination {
     pub hostname: String,
     pub username: String,

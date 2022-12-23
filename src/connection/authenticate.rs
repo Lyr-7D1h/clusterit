@@ -1,6 +1,6 @@
-use path_resolver::resolve;
+use path_resolver::resolve_path;
 use prompter::ask_secret;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{
     fs::{self, read_to_string},
     io,
@@ -12,7 +12,7 @@ use ssh2::Session;
 use super::{ConnectionError, Destination};
 
 // TODO check for encrypted keys too
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Authentication {
     Keys {
         public_key: String,
@@ -82,7 +82,7 @@ fn authenticate_using_stored_keys(
     session: &Session,
     destination: &Destination,
 ) -> Result<Option<Authentication>, io::Error> {
-    let ssh_path = resolve("~/.ssh");
+    let ssh_path = resolve_path("~/.ssh");
 
     let files = match fs::read_dir(&ssh_path) {
         Ok(f) => f,
@@ -96,8 +96,8 @@ fn authenticate_using_stored_keys(
         if let Ok(f) = key {
             if let Some(publickey) = f.file_name().to_str() {
                 if publickey.starts_with("id_") && publickey.ends_with(".pub") {
-                    let privatekey = resolve(format!("~/.ssh/{}", publickey.replace(".pub", "")));
-                    let publickey = resolve(format!("~/.ssh/{publickey}"));
+                    let privatekey = resolve_path(format!("~/.ssh/{}", publickey.replace(".pub", "")));
+                    let publickey = resolve_path(format!("~/.ssh/{publickey}"));
 
                     if privatekey.exists() && publickey.exists() {
                         debug!("Authenticating using {privatekey:?}");
@@ -152,7 +152,6 @@ pub fn authenticate_interactive(
         }
     }
 
-    let mut password: String;
     loop {
         if let Ok(password) = ask_secret(&format!(
             "{}@{}'s password",
@@ -161,15 +160,13 @@ pub fn authenticate_interactive(
             if let Err(e) = session.userauth_password(&destination.username, &password) {
                 error!("{e}");
             } else {
-                // TODO set max of 2 mistakes due to ssh timeout
+                if session.authenticated() {
+                    return Ok(Authentication::Password(password));
+                }
                 break;
             }
         }
     }
 
-    if !session.authenticated() {
-        return Err(ConnectionError::Other("SSH Could not authenticate"));
-    }
-
-    return Ok(Authentication::Password(password));
+    return Err(ConnectionError::Other("SSH Could not authenticate"));
 }
