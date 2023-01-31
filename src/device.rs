@@ -53,6 +53,6 @@ impl Device {
 
         Executer::new(connection).run(&mut self.executer_state, module);
 
-        return Ok(())
+        return Ok(());
     }
 }
