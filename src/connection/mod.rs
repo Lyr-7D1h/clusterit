@@ -43,11 +43,10 @@ impl Connection {
         })
     }
 
-    /// Connect using libssh2 trying to get the key in an automated way or will ask for the key
-    /// path as fallback.
-    pub fn connect_interactive(
-        destination: &Destination,
-    ) -> Result<(Connection, Authentication), ConnectionError> {
+    /// Connect using OpenSSH definition of destination (ssh://[user@]hostname[:port.])
+    /// If not public or private key found it will try
+    /// ssh-agent > most recent key in ~/.ssh > ask user input for password
+    pub fn connect_interactive(destination: &Destination) -> Result<(Connection, Authentication), ConnectionError> {
         debug!("Connecting to '{destination}'",);
 
         let mut session = Session::new()?;
